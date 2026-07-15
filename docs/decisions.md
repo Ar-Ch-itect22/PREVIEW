@@ -64,3 +64,24 @@ Decisions are recorded when made and are never backdated.
 - Context: clean package tests and typechecks cannot resolve production `dist` exports before dependency packages are built.
 - Decision: root quality scripts build the workspace topologically before package typechecks and tests.
 - Consequence: a clean workspace does not depend on stale build artifacts while production exports remain explicit.
+
+## 2026-07-15 — Derive causal edges from runtime-owned staged provenance
+
+- Status: accepted
+- Context: allowing a caller to provide effect dependency IDs and a pre-rendered Mail body would make the causal graph an assertion rather than proof of data flow.
+- Decision: callers select staged resource keys; the runtime resolves their overlay values and originating effect IDs, adapters derive exact output from that context, and runtime rejects emitted dependencies that do not match.
+- Consequence: the Reference Mail body and Calendar dependency are deterministically bound to the staged moved event while the kernel remains provider-neutral.
+
+## 2026-07-15 — Validate causality again at the domain sealing boundary
+
+- Status: accepted
+- Context: runtime staging validation alone could be bypassed by directly constructed or persisted effect graphs.
+- Decision: the domain graph schema rejects duplicate effect IDs, duplicate edges, dangling dependencies, and cycles; sealing, revision parsing, and digesting all traverse it.
+- Consequence: malformed causal graphs fail closed regardless of their construction path.
+
+## 2026-07-15 — Keep Reference Mail simulation-only at Gate 2
+
+- Status: accepted
+- Context: Gate 2 proves cross-adapter shadow execution, not irreversible delivery or recovery.
+- Decision: expose only a Mail read port and simulation adapter, classify send-message as irreversible with an external-delivery externality, and implement no Mail commit capability yet.
+- Consequence: the agent can inspect exact Mail consequences but cannot deliver a message.

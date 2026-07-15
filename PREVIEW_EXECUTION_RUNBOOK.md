@@ -1,6 +1,6 @@
 # PREVIEW Execution Runbook
 
-Last updated: 2026-07-14 (IST)
+Last updated: 2026-07-15 (IST)
 
 ## 1. Product lock
 
@@ -288,6 +288,8 @@ stage Calendar move
 ```
 
 Pass when the dependency graph is correct and abort changes neither base system.
+
+Implementation status (2026-07-15): passed locally. Runtime-owned staged-resource provenance binds the Reference Mail content and dependency edge to the staged Calendar move; the sealed graph is immutable, and Calendar/Mail provider snapshots remain byte-for-byte unchanged on seal and abort.
 
 ### Gate 3 — Real GPT-5.6 tool loop
 

@@ -1,6 +1,13 @@
 import type { Effect } from '@preview/domain';
 
+export interface StageDependency {
+  readonly effectId: string;
+  readonly resource: unknown;
+  readonly resourceKey: string;
+}
+
 export interface StageContext {
+  readonly dependencies: readonly StageDependency[];
   readonly effectId: string;
 }
 

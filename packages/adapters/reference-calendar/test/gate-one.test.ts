@@ -51,15 +51,16 @@ async function stageMove(
   const simulation = new ReferenceCalendarSimulationAdapter(provider.createReadPort());
   const session = new ShadowRevisionSession(revision(revisionId));
   await session.read(resourceKey, () => simulation.read(resourceKey));
-  await session.stage(resourceKey, () => simulation.read(resourceKey), (current) => simulation.stage(
-    current,
-    {
+  await session.stage(
+    resourceKey,
+    () => simulation.read(resourceKey),
+    { effectId: `effect-${revisionId}` },
+    (current, context) => simulation.stage(current, {
       end: '2026-07-27T10:30:00.000Z',
       eventId: 'event-1',
       start: '2026-07-27T10:00:00.000Z',
-    },
-    { effectId: `effect-${revisionId}` },
-  ));
+    }, context),
+  );
   return { session, simulation };
 }
 

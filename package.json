@@ -12,6 +12,7 @@
     "lint": "eslint . --max-warnings 0",
     "test": "pnpm build && pnpm test:packages",
     "test:gate1": "pnpm build && pnpm --filter @preview/reference-calendar test",
+    "test:gate2": "pnpm build && pnpm --filter @preview/reference-mail test",
     "test:packages": "pnpm -r --if-present test",
     "test:unit": "pnpm build && pnpm --filter @preview/domain test",
     "typecheck": "pnpm build && pnpm typecheck:packages",

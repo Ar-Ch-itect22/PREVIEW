@@ -1,6 +1,7 @@
 import { SealedRevisionMutationError } from './errors.js';
 import {
   effectGraphSchema,
+  effectSchema,
   simulationRevisionSchema,
   structuredConstraintSchema,
   type Effect,
@@ -35,7 +36,7 @@ export class RevisionDraft {
 
   public appendEffect(effect: Effect): void {
     this.#assertDraft();
-    this.#effects.push(structuredClone(effectGraphSchema.shape.effects.element.parse(effect)));
+    this.#effects.push(structuredClone(effectSchema.parse(effect)));
   }
 
   public addConstraint(constraint: StructuredConstraint): void {

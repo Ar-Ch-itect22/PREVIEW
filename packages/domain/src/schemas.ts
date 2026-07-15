@@ -80,6 +80,61 @@ export type Effect = z.infer<typeof effectSchema>;
 export const effectGraphSchema = z.object({
   effects: z.array(effectSchema),
   version: z.literal(1),
+}).superRefine((graph, context) => {
+  const effectsById = new Map<string, Effect>();
+  for (const [index, effect] of graph.effects.entries()) {
+    if (effectsById.has(effect.id)) {
+      context.addIssue({
+        code: 'custom',
+        message: `Duplicate effect ID: ${effect.id}`,
+        path: ['effects', index, 'id'],
+      });
+    } else {
+      effectsById.set(effect.id, effect);
+    }
+    if (new Set(effect.dependencies).size !== effect.dependencies.length) {
+      context.addIssue({
+        code: 'custom',
+        message: `Effect ${effect.id} contains duplicate dependencies`,
+        path: ['effects', index, 'dependencies'],
+      });
+    }
+  }
+
+  for (const [index, effect] of graph.effects.entries()) {
+    for (const dependency of effect.dependencies) {
+      if (!effectsById.has(dependency)) {
+        context.addIssue({
+          code: 'custom',
+          message: `Effect ${effect.id} depends on unknown effect ${dependency}`,
+          path: ['effects', index, 'dependencies'],
+        });
+      }
+    }
+  }
+
+  const visiting = new Set<string>();
+  const visited = new Set<string>();
+  const visit = (effectId: string): boolean => {
+    if (visiting.has(effectId)) return true;
+    if (visited.has(effectId)) return false;
+    visiting.add(effectId);
+    const effect = effectsById.get(effectId);
+    if (effect !== undefined) {
+      for (const dependency of effect.dependencies) {
+        if (effectsById.has(dependency) && visit(dependency)) return true;
+      }
+    }
+    visiting.delete(effectId);
+    visited.add(effectId);
+    return false;
+  };
+  for (const effectId of effectsById.keys()) {
+    if (visit(effectId)) {
+      context.addIssue({ code: 'custom', message: 'Effect graph contains a dependency cycle' });
+      break;
+    }
+  }
 });
 
 export type EffectGraph = z.infer<typeof effectGraphSchema>;

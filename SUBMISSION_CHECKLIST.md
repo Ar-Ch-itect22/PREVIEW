@@ -2,6 +2,7 @@
 
 - [x] Gate 0 contract and skeleton verified
 - [x] Gate 1 Reference Calendar kernel proof verified
+- [x] Gate 2 cross-adapter shadow execution verified
 - [ ] Kernel and reference adapters verified
 - [ ] Real GPT-5.6 staged session verified
 - [ ] Hero replay verified repeatedly

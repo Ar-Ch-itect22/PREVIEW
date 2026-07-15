@@ -9,6 +9,10 @@
 | Reads observe staged writes | Gate 1 Reference Calendar integration test |
 | Repeated approved commit does not duplicate | Gate 1 sequential and concurrent idempotency tests |
 | Relevant drift blocks before mutation | Gate 1 Reference Calendar drift test |
+| Mail content uses the staged Calendar value | Gate 2 cross-adapter integration test |
+| Causal edge is runtime-owned, not caller-authored | Gate 2 missing-provenance adversarial test |
+| Abort changes neither synthetic provider | Gate 2 byte-snapshot integration test |
+| Malformed causal graphs fail closed | Domain graph and direct-sealing tests |
 | Replay changes the exact graph | Gate 4 digest and causal-removal tests |
 | Approved content cannot drift or be tampered | Gate 5 approval tests |
 | Recovery reports residual state honestly | Gate 6 fault-injection receipts |

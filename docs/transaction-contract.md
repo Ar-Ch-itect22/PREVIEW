@@ -26,3 +26,7 @@ Only enumerated transitions are legal. Terminal states have no outgoing transiti
 An effect is immutable approved operation data: exact payload, dependencies, preconditions, declared externalities, deterministic risk/reversibility class, verification predicate, and presentation summary. Execution attempts are separate records and never mutate the effect.
 
 Each adapter validates its operation-specific effect as one cross-field contract. For the Reference Calendar move, resource identity, observed version, before-state identity, exact commit payload, and verification predicate must agree or the operation fails before provider access.
+
+Causal dependencies come from runtime-owned overlay provenance rather than agent-supplied effect IDs. An adapter receives cloned staged resources and their originating effects, derives its deterministic output, and must emit exactly the dependency sequence supplied by the runtime. Sealing independently rejects duplicate effect IDs, duplicate dependency edges, dangling dependencies, and cycles.
+
+The Gate 2 Reference Mail operation stages an exact message only. It declares `DELIVERS_EXTERNAL_MESSAGE` and `IRREVERSIBLE`; no Mail commit adapter or provider mutation capability exists yet.

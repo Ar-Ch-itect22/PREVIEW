@@ -6,9 +6,9 @@ The honest product claim is: **stage, inspect, replay, commit, verify, and recov
 
 ## Current status
 
-Gates 0 and 1 are implemented. The provider-neutral shadow runtime and the synthetic Reference Calendar adapter prove one staged move, read-your-writes, exact deterministic effect inspection, byte-identical abort, content-bound approval, revalidation, one verified provider mutation, and idempotent repeated commit.
+Gates 0 through 2 are implemented. The provider-neutral shadow runtime and synthetic Reference Calendar/Mail adapters prove one staged move, cross-adapter read-your-writes, an exact attendee message derived from the staged new time, an immutable causal graph, byte-identical abort, content-bound approval, revalidation, one verified Calendar mutation, and idempotent repeated commit.
 
-This is an in-memory kernel proof, not a real provider integration or durable recovery system. Gate 2 cross-adapter staging is next. No GPT loop or UI exists yet.
+This is an in-memory kernel proof, not a real provider integration or durable recovery system. Gate 3 GPT-5.6 orchestration is next. No GPT loop or UI exists yet.
 
 ## Local setup
 
@@ -28,6 +28,7 @@ Copy `.env.example` to `.env` only when a later gate needs local configuration. 
 - `packages/adapter-sdk`: separate simulation and commit capability contracts
 - `packages/approval`: deterministic graph canonicalization and content-bound approvals
 - `packages/adapters/reference-calendar`: synthetic certified move-event proof
+- `packages/adapters/reference-mail`: simulation-only irreversible send-message staging proof
 - `apps/gateway`: agent and human control planes (future gate)
 - `apps/worker`: minimal approval-bound single-effect commit path; durable saga work is future
 - `apps/customer-ops-demo`: customer-operations proof only; never kernel semantics

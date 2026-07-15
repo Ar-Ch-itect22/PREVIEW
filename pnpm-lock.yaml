@@ -87,6 +87,34 @@ importers:
         specifier: 'catalog:'
         version: 3.2.7(@types/node@24.13.3)
 
+  packages/adapters/reference-mail:
+    dependencies:
+      '@preview/adapter-sdk':
+        specifier: workspace:*
+        version: link:../../adapter-sdk
+      '@preview/domain':
+        specifier: workspace:*
+        version: link:../../domain
+      zod:
+        specifier: 'catalog:'
+        version: 3.25.76
+    devDependencies:
+      '@preview/approval':
+        specifier: workspace:*
+        version: link:../../approval
+      '@preview/reference-calendar':
+        specifier: workspace:*
+        version: link:../reference-calendar
+      '@preview/runtime':
+        specifier: workspace:*
+        version: link:../../runtime
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vitest:
+        specifier: 'catalog:'
+        version: 3.2.7(@types/node@24.13.3)
+
   packages/approval:
     dependencies:
       '@preview/domain':
@@ -118,6 +146,9 @@ importers:
 
   packages/runtime:
     dependencies:
+      '@preview/adapter-sdk':
+        specifier: workspace:*
+        version: link:../adapter-sdk
       '@preview/domain':
         specifier: workspace:*
         version: link:../domain

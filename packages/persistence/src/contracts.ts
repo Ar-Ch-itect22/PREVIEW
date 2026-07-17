@@ -45,6 +45,7 @@ export interface SagaJournalEvent {
   readonly idempotencyKey?: string;
   readonly kind: SagaJournalEventKind;
   readonly providerResult?: unknown;
+  readonly residuals?: readonly string[];
   readonly terminalStatus?: Receipt['terminalStatus'];
 }
 

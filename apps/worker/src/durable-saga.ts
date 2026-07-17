@@ -419,6 +419,7 @@ class SagaExecutor {
       details: verification.details,
       effectId,
       kind: verification.verified ? 'EFFECT_COMPENSATED' : 'EFFECT_COMPENSATION_FAILED',
+      ...(verification.residuals === undefined ? {} : { residuals: verification.residuals }),
     });
   }
 
@@ -430,7 +431,15 @@ class SagaExecutor {
       let status: Receipt['effects'][number]['status'] = 'not_attempted';
       let details = 'Provider mutation was not attempted';
       const lastRelevant = [...events].reverse().find((event) => event.details !== undefined);
-      if (events.some((event) => event.kind === 'EFFECT_COMPENSATED')) status = 'compensated';
+      const compensated = events.find((event) => event.kind === 'EFFECT_COMPENSATED');
+      if (compensated !== undefined) {
+        status = compensated.residuals === undefined || compensated.residuals.length === 0
+          ? 'compensated'
+          : 'residual';
+        if (compensated.residuals !== undefined && compensated.residuals.length > 0) {
+          details = `${compensated.details ?? 'Provider fields compensated'}; residual: ${compensated.residuals.join('; ')}`;
+        }
+      }
       else if (events.some((event) => (
         event.kind === 'EFFECT_COMMIT_UNRESOLVED'
         || event.kind === 'EFFECT_COMPENSATION_UNRESOLVED'
@@ -441,7 +450,12 @@ class SagaExecutor {
       ))) status = 'residual';
       else if (events.some((event) => event.kind === 'EFFECT_COMMIT_FAILED')) status = 'failed';
       else if (events.some((event) => event.kind === 'EFFECT_VERIFIED')) status = 'committed_verified';
-      if (status !== 'not_attempted') details = lastRelevant?.details ?? status;
+      if (
+        status !== 'not_attempted'
+        && (compensated?.residuals === undefined || compensated.residuals.length === 0)
+      ) {
+        details = lastRelevant?.details ?? status;
+      }
       return {
         adapterId: effect.adapterId,
         attemptCount: events.filter((event) => event.kind === 'EFFECT_COMMIT_STARTED').length,

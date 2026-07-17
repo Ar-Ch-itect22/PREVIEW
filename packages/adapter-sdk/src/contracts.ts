@@ -43,6 +43,7 @@ export interface CommitResult<Resource> {
 
 export interface VerificationResult {
   readonly details: string;
+  readonly residuals?: readonly string[];
   readonly verified: boolean;
 }
 

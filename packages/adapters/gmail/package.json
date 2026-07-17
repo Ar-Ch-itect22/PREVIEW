@@ -1,0 +1,32 @@
+{
+  "name": "@preview/gmail",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@preview/adapter-sdk": "workspace:*",
+    "@preview/domain": "workspace:*",
+    "@preview/google-common": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@preview/adapter-testkit": "workspace:*",
+    "@preview/approval": "workspace:*",
+    "@preview/google-calendar": "workspace:*",
+    "@preview/persistence": "workspace:*",
+    "@preview/worker": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

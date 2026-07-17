@@ -359,6 +359,8 @@ Order:
 
 Each real adapter must pass the same test kit as its reference adapter.
 
+Implementation status (2026-07-17): passed with live Google credentials. A content-bound, human-approved durable saga revalidated the complete read set, moved and verified one narrowly supported Google Calendar event, created and verified one exact Gmail draft, then sent and verified one exact Gmail message. Each effect was attempted once; the terminal receipt was `COMMITTED_VERIFIED` with zero compensation attempts, zero known residuals, and zero unresolved state. Gmail verifies successful writes through the provider ID returned by Google while retaining fail-closed Message-ID search reconciliation for ambiguous irreversible outcomes.
+
 ### Gate 8 — Product UX and no-login Judge Mode
 
 Build:

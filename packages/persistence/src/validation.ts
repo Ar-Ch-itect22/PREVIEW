@@ -73,6 +73,9 @@ export function parseJournalEntry(entry: SagaJournalEntry): SagaJournalEntry {
   if (entry.details?.length === 0) {
     throw new TypeError('Journal details cannot be empty');
   }
+  if (entry.residuals?.some((residual) => residual.length === 0) === true) {
+    throw new TypeError('Journal residual details cannot be empty');
+  }
   if (entry.kind === 'RUN_TERMINAL' && entry.terminalStatus === undefined) {
     throw new TypeError('Terminal journal event requires terminal status');
   }

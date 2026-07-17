@@ -162,3 +162,38 @@ Decisions are recorded when made and are never backdated.
 - Context: an unresolved irreversible outcome can leave earlier verified mutations in place, and compensation can be refused when provider state drifts after commit.
 - Decision: receipts separately enumerate known residual state and unresolved possible state. Verified mutations left after an incomplete run are known residuals; unknown Mail delivery is unresolved; failed or unknown compensation never reports residual zero.
 - Consequence: PREVIEW claims only verified compensation and reports remaining provider state without implying universal undo or global atomicity.
+
+## 2026-07-17 — Certify narrow Google Workspace operations
+
+- Status: accepted
+- Context: Calendar and Gmail expose broader mutation surfaces than PREVIEW can honestly verify and recover in the first real-provider gate.
+- Decision: certify only owned, confirmed, timed, non-recurring Calendar event moves with no attendees and explicit `sendUpdates=none`; exact UTF-8 plain-text Gmail draft creation; and exact UTF-8 plain-text Gmail sending. Reject all other event types, recipient/header variants, HTML, attachments, threading, aliases, and unknown operations.
+- Consequence: deterministic PREVIEW effects remain the source of provider payloads, while unsupported provider behavior fails before mutation.
+
+## 2026-07-17 — Treat real-provider restoration as compensation with residuals
+
+- Status: accepted
+- Context: restoring Calendar start/end or deleting a Gmail draft cannot erase provider revision metadata, mailbox history, timestamps, or audit/change-feed records.
+- Decision: classify Calendar move and Gmail draft creation as `COMPENSABLE`, add provider-neutral residual evidence to compensation verification and durable journals, and surface a compensated visible state with persistent provider history as a residual receipt rather than universal undo.
+- Consequence: receipts distinguish restored controlled fields from unavoidable provider history and never claim byte-identical reversal.
+
+## 2026-07-17 — Never infer Gmail non-delivery from an empty search
+
+- Status: accepted
+- Context: Gmail exact sending has no provider idempotency key, and message search can lag after an ambiguous network outcome.
+- Decision: bind deterministic MIME bytes and RFC `Message-ID` during simulation. One matching message with exact controlled semantics proves `APPLIED`; empty, duplicate, or mismatched results remain `UNKNOWN` and are never a retry authorization.
+- Consequence: ambiguous delivery stops for attention instead of risking duplicate external email.
+
+## 2026-07-17 — Require two-phase live certification approval
+
+- Status: accepted
+- Context: a credential-backed test includes a real Calendar mutation, a Gmail draft, and an external message, so a test command must not silently cross the approval boundary.
+- Decision: the live prepare command performs reads and writes an ignored sealed artifact with zero provider mutations; the execute command requires the human to copy the exact reviewed graph digest into `PREVIEW_GATE7_APPROVE_GRAPH_DIGEST`, then revalidates the complete signed snapshot and uses the existing file-backed durable saga.
+- Consequence: possessing OAuth credentials alone cannot trigger a provider mutation, and repeated execution resumes from durable evidence rather than bypassing the saga.
+
+## 2026-07-17 — Verify successful Gmail writes by returned provider identity
+
+- Status: accepted
+- Context: Gmail accepted an exact-message send and returned its provider message ID, but an immediate `rfc822msgid` search did not yet expose the new message. Treating that indexing delay as a content mismatch produced a truthful residual receipt, but it could not certify the otherwise known successful write.
+- Decision: after a successful Gmail API response, verify the exact controlled MIME by reading the returned provider draft/message ID directly. Reserve Message-ID search for reconciliation when a mutation response is ambiguous and no trustworthy provider ID is available.
+- Consequence: normal verification is independent of Gmail search-index lag, while ambiguous irreversible sends still remain `UNKNOWN` on empty, duplicate, or mismatched search results and are never blindly retried.

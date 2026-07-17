@@ -116,3 +116,44 @@ This log records actual collaboration only. It is not a substitute for Git histo
 - `pnpm install --frozen-lockfile --offline` passed across all 12 workspace projects with dependency controls unchanged.
 - `pnpm test:gate6` passed: 17 focused tests covering the canonical Failure Lab, happy and compensation crash matrices, recovery-only reconciliation, ambiguous and unresolved irreversible Mail outcomes, deterministic commit and compensation retry bounds, replay-invalidation recovery, stale and duplicate workers, in-flight lease expiry, atomic file-store recovery, live-lock ownership, post-commit compensation drift, terminal receipt reconstruction, and before/after failure-outcome boundaries.
 - `pnpm check` passed: ESLint with zero warnings, eleven topological production builds and strict package typechecks, and 69 tests across 16 files.
+
+## 2026-07-17 — Gate 7 local implementation to the Google credential boundary
+
+- Codex re-read the repository guidance and exact Gate 7 pass condition before implementation, then used a bounded read-only design review to define the smallest honest Calendar and Gmail certification surfaces.
+- Codex implemented a shared Google OAuth/HTTP transport, a provider-neutral adapter conformance kit, a narrow Google Calendar adapter, exact Gmail draft/send adapters, and a two-phase credential-backed certification harness.
+- The mocked durable integration seals a Calendar → Gmail dependency graph, performs the complete content-bound snapshot preflight, and executes only through the existing file-backed saga. No commit capability is exposed to GPT or simulation adapters.
+- Calendar uses conditional `If-Match` mutation and explicitly suppresses attendee notifications. Gmail binds deterministic MIME and treats empty/duplicate/mismatched reconciliation searches as unknown. Provider restoration reports persistent history as residual state.
+- Official Google Calendar, Gmail, and OAuth documentation was consulted for conditional ETags, event patching, raw MIME sending, draft semantics, Message-ID search, and least-privilege scopes.
+- No Google credential was read, requested in chat, or available to the implementation. No live Google API call, provider mutation, draft, or external message has been made, so Gate 7 is not yet claimed complete and no milestone commit is created at this boundary.
+
+### Verified local results
+
+- Focused Google transport tests passed: 2 tests for bearer-token isolation and refresh-token exchange caching.
+- Focused Google Calendar tests passed: 6 tests for deterministic simulation, exact conditional patching, verification/compensation residuals, timeout-after-apply reconciliation, drift/unknown-write fail-closed behavior, unsupported-event rejection, and post-commit drift refusal.
+- Focused Gmail and durable integration tests passed: 9 tests for deterministic MIME, strict operation rejection, draft lifecycle, irreversible send reconciliation, unknown ambiguous outcomes, identity checks, causal staging, post-commit draft drift refusal, and the signed file-backed Calendar → Gmail saga.
+- `pnpm install --offline --frozen-lockfile` passed with dependency safety controls unchanged. `pnpm check` passed with ESLint at zero warnings, 16 production builds, strict package typechecks, and 86 tests across 21 files.
+- The explicitly approved live credential-backed session remains pending; Gate 7 is not yet complete.
+
+## 2026-07-17 — Gate 7 credential-backed certification attempts and verification correction
+
+- Aru completed the Google Cloud/OAuth setup, kept every credential in the ignored local `.env`, created a disposable Calendar fixture, and explicitly approved each reviewed graph digest before execution.
+- A file-change transcript exposed the first local approval-signing key. Codex stopped further live execution; Aru rotated that key manually without placing it in chat or tool output, removed the old approval, and prepared a newly signed graph. The Google OAuth values were not surfaced.
+- The first authorized live run moved and verified Calendar and created a Gmail draft, then stopped before delivery because draft reconciliation could not reliably observe the newly created controlled message. It compensated Calendar, retained an honest residual/unresolved receipt, and did not send an email.
+- Codex changed draft discovery to authoritative draft listing/direct reads and unfolded RFC continuation headers. Focused mocked tests passed before the next live attempt.
+- The second authorized live run passed complete preflight, moved and verified Calendar, created and verified the exact draft, and issued exactly one Gmail send. Gmail returned an applied provider result, but immediate search-based verification did not yet find the sent message. PREVIEW did not resend; it removed the draft, restored the Calendar event, and emitted `COMPLETED_WITH_RESIDUALS` with the irreversible sent message and provider history reported honestly.
+- Codex changed successful Gmail verification to read the provider ID returned by the mutation response, leaving search-only reconciliation fail-closed for ambiguous outcomes. A regression test now hides the message from search while direct returned-ID verification succeeds with one mutation.
+- Gate 7 remains incomplete pending one new read-only prepare, a new content-bound approval, and a fresh live run that reaches a clean verified receipt. Neither prior terminal run nor its approval will be reused.
+
+### Verified results after the correction
+
+- Focused Gmail strict typecheck and ESLint passed; Gmail and durable saga tests passed: 10 tests across 2 files.
+- A clean secret-free temporary workspace installed the frozen lockfile with the dependency safety policies intact, then `pnpm check` passed: ESLint with zero warnings, 16 production builds, strict package typechecks, and 85 tests across 21 files.
+- No additional provider mutation was performed while diagnosing or correcting verification.
+
+## 2026-07-17 — Gate 7 live Google certification pass
+
+- Aru replaced both prior terminal session identifiers with a new session, cleared the old digest, and saved the resulting read-only prepare digest only after reviewing the exact Calendar, draft, and send effects. Prepare reported `providerMutationCount: 0`.
+- Aru explicitly approved the exact new graph digest and authorized live execution. PREVIEW revalidated the complete approved read set before mutation and executed only through the existing file-backed durable saga.
+- Google Calendar move, exact Gmail draft creation, and exact Gmail send each recorded one commit attempt and remote verification. No effect was retried or compensated.
+- The terminal receipt was `COMMITTED_VERIFIED`; all three effect statuses were `committed_verified`, `knownResidualCount` was `0`, and `unresolvedCount` was `0`.
+- This credential-backed result completes the Gate 7 Calendar/Gmail certification boundary. No broader Calendar/Gmail surface, HubSpot access, GPT commit capability, UI work, or out-of-scope repository is included in this milestone.

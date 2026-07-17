@@ -44,6 +44,9 @@ importers:
       '@preview/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@preview/persistence':
+        specifier: workspace:*
+        version: link:../../packages/persistence
       '@preview/reference-calendar':
         specifier: workspace:*
         version: link:../../packages/adapters/reference-calendar
@@ -56,6 +59,9 @@ importers:
       '@preview/runtime':
         specifier: workspace:*
         version: link:../../packages/runtime
+      '@preview/worker':
+        specifier: workspace:*
+        version: link:../worker
     devDependencies:
       typescript:
         specifier: 'catalog:'
@@ -75,6 +81,9 @@ importers:
       '@preview/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@preview/persistence':
+        specifier: workspace:*
+        version: link:../../packages/persistence
     devDependencies:
       typescript:
         specifier: 'catalog:'
@@ -227,6 +236,19 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 3.2.7(@types/node@24.13.3)
+
+  packages/persistence:
+    dependencies:
+      '@preview/approval':
+        specifier: workspace:*
+        version: link:../approval
+      '@preview/domain':
+        specifier: workspace:*
+        version: link:../domain
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
 
   packages/runtime:
     dependencies:

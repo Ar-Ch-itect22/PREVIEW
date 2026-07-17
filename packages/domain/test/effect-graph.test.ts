@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   RevisionDraft,
   effectGraphSchema,
+  planEffectOrder,
   type Effect,
   type SimulationRevision,
 } from '../src/index.js';
@@ -29,6 +30,16 @@ describe('effect graph causality', () => {
       effects: [effect('dependent', ['source']), effect('source')],
       version: 1,
     }).effects).toHaveLength(2);
+  });
+
+  it('orders dependency-safe reversible work before ready irreversible effects', () => {
+    const calendar = effect('calendar');
+    const mail = { ...effect('mail', ['calendar']), risk: 'IRREVERSIBLE' as const };
+    const crm = effect('crm', ['calendar']);
+
+    expect(planEffectOrder({ effects: [calendar, mail, crm], version: 1 }).map(
+      (candidate) => candidate.id,
+    )).toEqual(['calendar', 'crm', 'mail']);
   });
 
   it.each([

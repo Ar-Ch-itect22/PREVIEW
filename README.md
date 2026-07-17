@@ -30,7 +30,7 @@ Copy `.env.example` to `.env` only when a later gate needs local configuration. 
 - `packages/adapters/reference-calendar`: synthetic certified move-event proof
 - `packages/adapters/reference-mail`: simulation-only irreversible send-message staging proof
 - `apps/gateway`: agent and human control planes (future gate)
-- `apps/worker`: minimal approval-bound single-effect commit path; durable saga work is future
+- `apps/worker`: approval-bound durable saga execution, reconciliation, verification, compensation, and receipts
 - `apps/customer-ops-demo`: customer-operations proof only; never kernel semantics
 
 See [the transaction contract](docs/transaction-contract.md) and [architecture](docs/architecture.md).

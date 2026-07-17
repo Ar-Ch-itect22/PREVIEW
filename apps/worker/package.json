@@ -17,7 +17,8 @@
   "dependencies": {
     "@preview/adapter-sdk": "workspace:*",
     "@preview/approval": "workspace:*",
-    "@preview/domain": "workspace:*"
+    "@preview/domain": "workspace:*",
+    "@preview/persistence": "workspace:*"
   },
   "devDependencies": {
     "typescript": "catalog:",

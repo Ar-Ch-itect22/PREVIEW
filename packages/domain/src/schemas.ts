@@ -227,3 +227,55 @@ export const effectAttemptSchema = z.object({
 });
 
 export type EffectAttempt = z.infer<typeof effectAttemptSchema>;
+
+export const effectReceiptStatusSchema = z.enum([
+  'not_attempted',
+  'committed_verified',
+  'compensated',
+  'failed',
+  'residual',
+  'unresolved',
+]);
+
+export const receiptEffectSchema = z.object({
+  adapterId: identifierSchema,
+  attemptCount: z.number().int().nonnegative(),
+  compensationAttemptCount: z.number().int().nonnegative(),
+  details: z.string().min(1),
+  effectId: identifierSchema,
+  providerResult: z.unknown().optional(),
+  status: effectReceiptStatusSchema,
+});
+
+export const residualStateSchema = z.object({
+  details: z.string().min(1),
+  effectId: identifierSchema,
+});
+
+export const receiptSchema = z.object({
+  approvalDigest: digestSchema,
+  effects: z.array(receiptEffectSchema),
+  graphDigest: digestSchema,
+  knownResidualCount: z.number().int().nonnegative(),
+  knownResiduals: z.array(residualStateSchema),
+  revisionId: identifierSchema,
+  runId: identifierSchema,
+  terminalStatus: z.enum([
+    'COMMITTED_VERIFIED',
+    'COMPENSATED',
+    'COMPLETED_WITH_RESIDUALS',
+    'REQUIRES_ATTENTION',
+  ]),
+  transactionId: identifierSchema,
+  unresolved: z.array(residualStateSchema),
+  unresolvedCount: z.number().int().nonnegative(),
+}).superRefine((receipt, context) => {
+  if (receipt.knownResidualCount !== receipt.knownResiduals.length) {
+    context.addIssue({ code: 'custom', message: 'Known residual count does not match receipt data' });
+  }
+  if (receipt.unresolvedCount !== receipt.unresolved.length) {
+    context.addIssue({ code: 'custom', message: 'Unresolved count does not match receipt data' });
+  }
+});
+
+export type Receipt = z.infer<typeof receiptSchema>;

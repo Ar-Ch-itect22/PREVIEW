@@ -3,6 +3,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import {
   approvalSchema,
   identifierSchema,
+  planEffectOrder,
   snapshotManifestSchema,
   type Approval,
   type SimulationRevision,
@@ -42,22 +43,45 @@ export interface ApprovalVerificationContext {
 
 type UnsignedApproval = Omit<Approval, 'signature'>;
 
+export interface RevisionInvalidationStore {
+  invalidate(revisionId: string): void;
+  isInvalidated(revisionId: string): boolean;
+}
+
+export class InMemoryRevisionInvalidationStore implements RevisionInvalidationStore {
+  readonly #revisionIds = new Set<string>();
+
+  public invalidate(revisionId: string): void {
+    this.#revisionIds.add(identifierSchema.parse(revisionId));
+  }
+
+  public isInvalidated(revisionId: string): boolean {
+    return this.#revisionIds.has(identifierSchema.parse(revisionId));
+  }
+}
+
 export class ContentBoundApprovalAuthority {
-  readonly #invalidatedRevisionIds = new Set<string>();
+  readonly #invalidations: RevisionInvalidationStore;
   readonly #signingKey: string;
 
-  public constructor(signingKey: string) {
+  public constructor(
+    signingKey: string,
+    invalidations: RevisionInvalidationStore = new InMemoryRevisionInvalidationStore(),
+  ) {
     if (signingKey.length < 16) {
       throw new TypeError('Approval signing key must be at least 16 characters');
     }
     this.#signingKey = signingKey;
+    this.#invalidations = invalidations;
   }
 
   public approve(revision: Readonly<SimulationRevision>, request: ApprovalRequest): Readonly<Approval> {
     const graphDigest = this.#validateSealedRevision(revision);
     const snapshot = this.#validateSnapshot(request.snapshot);
     this.#validateSnapshotCoverage(revision, snapshot);
-    const effectOrder = revision.effectGraph?.effects.map((effect) => effect.id) ?? [];
+    const effectOrder = revision.effectGraph === null
+      ? []
+      : planEffectOrder(revision.effectGraph).map((effect) => effect.id);
     const adapterVersions = this.#validateVersionManifest(
       request.adapterVersions,
       this.#requiredAdapterIds(revision, snapshot),
@@ -95,7 +119,7 @@ export class ContentBoundApprovalAuthority {
   }
 
   public invalidateRevision(revisionId: string): void {
-    this.#invalidatedRevisionIds.add(identifierSchema.parse(revisionId));
+    this.#invalidations.invalidate(identifierSchema.parse(revisionId));
   }
 
   public verify(
@@ -117,7 +141,9 @@ export class ContentBoundApprovalAuthority {
     if (Date.parse(parsed.expiresAt) <= now.getTime()) {
       throw new ApprovalValidationError('Approval has expired');
     }
-    const effectOrder = revision.effectGraph?.effects.map((effect) => effect.id) ?? [];
+    const effectOrder = revision.effectGraph === null
+      ? []
+      : planEffectOrder(revision.effectGraph).map((effect) => effect.id);
     if (
       effectOrder.length !== parsed.effectOrder.length
       || effectOrder.some((effectId, index) => effectId !== parsed.effectOrder[index])
@@ -258,7 +284,7 @@ export class ContentBoundApprovalAuthority {
   }
 
   #validateSealedRevision(revision: Readonly<SimulationRevision>): string {
-    if (this.#invalidatedRevisionIds.has(revision.id)) {
+    if (this.#invalidations.isInvalidated(revision.id)) {
       throw new ApprovalValidationError(`Revision ${revision.id} approval path is invalidated`);
     }
     if (revision.status !== 'SEALED' || revision.effectGraph === null || revision.graphDigest === null) {
@@ -267,14 +293,6 @@ export class ContentBoundApprovalAuthority {
     const computed = computeEffectGraphDigest(revision.effectGraph);
     if (computed !== revision.graphDigest) {
       throw new ApprovalValidationError('Sealed revision graph digest does not match its effects');
-    }
-    const positions = new Map(
-      revision.effectGraph.effects.map((effect, index) => [effect.id, index] as const),
-    );
-    for (const [index, effect] of revision.effectGraph.effects.entries()) {
-      if (effect.dependencies.some((dependency) => (positions.get(dependency) ?? index) >= index)) {
-        throw new ApprovalValidationError('Approval effect order must place dependencies first');
-      }
     }
     return computed;
   }

@@ -347,6 +347,8 @@ Failure scenario:
 
 Pass when process death and injected failure at every journal boundary never cause a blind duplicate irreversible action, and every run ends with an honest receipt.
 
+Implementation status (2026-07-17): passed locally. The worker uses content-bound authorization, complete read-only preflight, deterministic risk-aware order, fenced leases, append-only intent/result journaling, graph-scoped idempotency, explicit reconciliation, bounded attempts, remote verification, drift-safe compensation, durable replay invalidation, and receipts that separate known residual from unresolved state. The Failure Lab proves Calendar commit/verify, CRM definite pre-write failure, Mail withheld, Calendar compensation/verify, and residual state zero; crash matrices cover happy, failure, compensation, recovery-only reconciliation, ambiguous irreversible delivery, terminal/receipt reconstruction, and lease expiry during an in-flight Mail call without duplicate delivery.
+
 ### Gate 7 — Real provider adapters
 
 Order:

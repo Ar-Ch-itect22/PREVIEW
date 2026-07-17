@@ -239,7 +239,7 @@ describe('Gate 1 Reference Calendar', () => {
     const mutatingAdapter: CommitAdapter<CalendarEvent> = {
       adapterId: delegate.adapterId,
       commit: (effect, key) => delegate.commit(effect, key),
-      compensate: (effect) => delegate.compensate(effect),
+      compensate: (effect, result, key) => delegate.compensate(effect, result, key),
       reconcile: (effect, key) => {
         const original = mutableRevision.effectGraph?.effects[0];
         if (original !== undefined) {

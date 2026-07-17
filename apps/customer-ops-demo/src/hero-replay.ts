@@ -18,7 +18,7 @@ import {
   type ApprovalPathInvalidator,
 } from '@preview/runtime';
 
-import { customerMeetings, type HeroProviders } from './fixtures.js';
+import { customerMeetings, type CustomerMeeting, type HeroProviders } from './fixtures.js';
 
 export const HERO_INSTRUCTION = 'I am at an offsite next week. Move every customer meeting to the following week, email attendees with their new times, and push the corresponding CRM follow-up dates.';
 
@@ -38,6 +38,7 @@ export interface CustomerOpsSimulationResult {
 export async function runCustomerOpsSimulation(
   draftRevision: Readonly<SimulationRevision>,
   providers: HeroProviders,
+  meetings: readonly CustomerMeeting[] = customerMeetings,
 ): Promise<CustomerOpsSimulationResult> {
   const calendar = new ReferenceCalendarSimulationAdapter(providers.calendar.createReadPort());
   const crm = new ReferenceCrmSimulationAdapter(providers.crm.createReadPort());
@@ -45,7 +46,7 @@ export async function runCustomerOpsSimulation(
   const session = new ShadowRevisionSession(structuredClone(draftRevision));
   const effectGroups: CustomerEffectGroup[] = [];
 
-  for (const meeting of customerMeetings) {
+  for (const meeting of meetings) {
     const calendarResourceKey = `${calendar.adapterId}:event:${meeting.eventId}`;
     const observed = await session.read(
       calendarResourceKey,

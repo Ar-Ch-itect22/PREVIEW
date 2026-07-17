@@ -134,3 +134,31 @@ Decisions are recorded when made and are never backdated.
 - Context: effect-local revalidation cannot cover absent resources or reads that do not directly produce an effect, and accepting commit adapters during drift checking would weaken the no-write-before-preflight boundary.
 - Decision: every shadow base read records a runtime-owned present/absent observation, sealing writes the canonical snapshot digest into the immutable revision, approval rejects any substituted snapshot, and the worker revalidates the entire signed snapshot through versioned read-only adapters before returning a frozen commit plan.
 - Consequence: changed, missing, or newly appeared effect targets and read-only dependencies block the whole plan while preflight has no provider mutation capability; the existing single-effect mutation control also requires this preflight before a new provider write. Durable execution and closing the preflight-to-commit race remain Gate 6 work.
+
+## 2026-07-17 — Bind approval to deterministic risk-aware execution order
+
+- Status: accepted
+- Context: the hero graph records Calendar, Mail, then CRM, but the sibling CRM effect is reversible while Mail delivery is irreversible.
+- Decision: approval and execution use one deterministic topological planner that chooses ready reversible effects before compensable and irreversible effects, with graph position as the stable tie-break.
+- Consequence: the approved hero order is Calendar, CRM, Mail without changing causal dependencies, so a CRM failure withholds Mail and permits verified Calendar compensation.
+
+## 2026-07-17 — Recover durable attempts by reconciliation, never assumption
+
+- Status: accepted
+- Context: process death can occur after a provider call but before its result is journaled, and a second worker can acquire an expired lease while the first call is still in flight.
+- Decision: persist intent before every provider call, use graph-scoped idempotency keys, fenced leases, strict persisted-result parsing, and explicit applied/not-applied/unknown reconciliation. Retry only authoritatively non-applied calls, with a deterministic two-attempt limit; unknown irreversible outcomes stop for attention.
+- Consequence: restart and lease-expiry paths reconcile before acting, stale workers cannot append, Mail delivery is not blindly duplicated, and every supported fault path reaches an honest terminal receipt.
+
+## 2026-07-17 — Persist authorization without blocking required recovery
+
+- Status: accepted
+- Context: replay invalidation must block a new commit, but invalidation after a mutation intent must not prevent reconciliation, compensation, or receipt generation.
+- Decision: journal successful authorization before execution. A run with no mutation intent must still repeat full approval and read-only snapshot preflight; a run with durable mutation intent resumes from its authorized journal state and provider reconciliation.
+- Consequence: invalidation before the first mutation intent produces zero provider writes, while invalidation after intent cannot strand an already-started execution without recovery.
+
+## 2026-07-17 — Report partial provider state as residual or unresolved
+
+- Status: accepted
+- Context: an unresolved irreversible outcome can leave earlier verified mutations in place, and compensation can be refused when provider state drifts after commit.
+- Decision: receipts separately enumerate known residual state and unresolved possible state. Verified mutations left after an incomplete run are known residuals; unknown Mail delivery is unresolved; failed or unknown compensation never reports residual zero.
+- Consequence: PREVIEW claims only verified compensation and reports remaining provider state without implying universal undo or global atomicity.

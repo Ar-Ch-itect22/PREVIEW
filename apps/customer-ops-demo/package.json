@@ -17,10 +17,12 @@
   "dependencies": {
     "@preview/approval": "workspace:*",
     "@preview/domain": "workspace:*",
+    "@preview/persistence": "workspace:*",
     "@preview/reference-calendar": "workspace:*",
     "@preview/reference-crm": "workspace:*",
     "@preview/reference-mail": "workspace:*",
-    "@preview/runtime": "workspace:*"
+    "@preview/runtime": "workspace:*",
+    "@preview/worker": "workspace:*"
   },
   "devDependencies": {
     "typescript": "catalog:",

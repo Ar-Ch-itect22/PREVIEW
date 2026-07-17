@@ -100,3 +100,19 @@ This log records actual collaboration only. It is not a substitute for Git histo
 - Focused Gate 5 and affected regression suites passed: domain 15 tests, runtime 6 tests, approval 6 tests, worker preflight 3 tests, Gate 1 Calendar 8 tests, Gate 2 Mail 3 tests, Gate 3 orchestration 7 tests, and Gate 4 hero replay 1 test.
 - Tests prove recipient and one-byte payload tampering rejection; sealed snapshot, constraint, adapter-version, and policy-version binding; snapshot-substitution rejection; wrong-user, wrong-tenant, expiration, and replay invalidation; complete Calendar/CRM-present and Mail-absent revalidation; read-only dependency drift blocking through the exported commit control; immutable plans; and zero PREVIEW provider mutations.
 - `pnpm check` passed: ESLint with zero warnings, ten topological production builds and strict package typechecks, and 51 tests across 16 files.
+
+## 2026-07-17 — Gate 6 durable saga and Failure Lab
+
+- Codex first reverified Gate 5 with a frozen offline install and the complete quality gate before changing commit execution.
+- Codex implemented one provider-neutral risk-aware planner shared by approval and execution, then added durable adapter reconciliation contracts, graph-scoped idempotency, bounded attempts, fenced leases, immutable run seeds, append-only execution journals, persistent replay invalidation, atomic file-backed records, verification, compensation, and honest terminal receipts.
+- The Customer Ops demo composes Reference Calendar, CRM, and Mail commit adapters into the canonical Failure Lab without moving meeting or customer assumptions into the kernel. The required path commits and verifies Calendar, fails CRM before writing, withholds Mail, compensates and verifies Calendar, and reports zero residual and unresolved state.
+- The first bounded read-only audit identified recovery and evidence gaps in residual accounting, replay invalidation after intent, retry bounds, file-store crash behavior, recovery-only crash coverage, and the read-only preflight capability boundary. Codex fixed each issue and added targeted regression tests.
+- A follow-up audit found live-lock ownership, caller-variable retry policy, and missing journal-outcome boundaries. Codex made lock release token-owned, retained live-PID locks, fixed the retry policy at two attempts, distinguished attempt checkpoints, and injected process death before and after every previously missing outcome.
+- The final bounded read-only audit reported no remaining Gate 6 milestone blocker and made no edits.
+- No credential, model call, UI, real provider, external message, or out-of-scope repository was accessed. The ignored `.env` was not read or changed.
+
+### Verified results
+
+- `pnpm install --frozen-lockfile --offline` passed across all 12 workspace projects with dependency controls unchanged.
+- `pnpm test:gate6` passed: 17 focused tests covering the canonical Failure Lab, happy and compensation crash matrices, recovery-only reconciliation, ambiguous and unresolved irreversible Mail outcomes, deterministic commit and compensation retry bounds, replay-invalidation recovery, stale and duplicate workers, in-flight lease expiry, atomic file-store recovery, live-lock ownership, post-commit compensation drift, terminal receipt reconstruction, and before/after failure-outcome boundaries.
+- `pnpm check` passed: ESLint with zero warnings, eleven topological production builds and strict package typechecks, and 69 tests across 16 files.

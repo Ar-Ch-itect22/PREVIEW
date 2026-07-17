@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto';
 
+import { DefinitelyNotAppliedError } from '@preview/adapter-sdk';
+
 import { calendarEventSchema, type CalendarEvent, type MoveEventInput } from './schemas.js';
 
 export interface CalendarReadPort {
@@ -19,6 +21,7 @@ export interface CalendarCommitPort extends CalendarReadPort {
   ): Promise<CalendarProviderCommitResult>;
   compensateMove(
     before: CalendarEvent,
+    expectedVersion: string,
     idempotencyKey: string,
   ): Promise<CalendarProviderCommitResult>;
   reconcile(idempotencyKey: string): Promise<CalendarProviderCommitResult | undefined>;
@@ -51,8 +54,8 @@ export class InMemoryReferenceCalendarProvider {
     return Object.freeze({
       commitMove: (input: MoveEventInput, expectedVersion: string, idempotencyKey: string) =>
         Promise.resolve(this.#commitMove(input, expectedVersion, idempotencyKey)),
-      compensateMove: (before: CalendarEvent, idempotencyKey: string) =>
-        Promise.resolve(this.#compensateMove(before, idempotencyKey)),
+      compensateMove: (before: CalendarEvent, expectedVersion: string, idempotencyKey: string) =>
+        Promise.resolve(this.#compensateMove(before, expectedVersion, idempotencyKey)),
       readEvent: (eventId: string) => Promise.resolve(this.#readEvent(eventId)),
       reconcile: (idempotencyKey: string) => Promise.resolve(this.#reconcile(idempotencyKey)),
     });
@@ -90,10 +93,10 @@ export class InMemoryReferenceCalendarProvider {
 
     const current = this.#events.get(input.eventId);
     if (current === undefined) {
-      throw new Error(`Calendar event not found: ${input.eventId}`);
+      throw new DefinitelyNotAppliedError(`Calendar event not found: ${input.eventId}`);
     }
     if (current.version !== expectedVersion) {
-      throw new Error('Calendar event version drifted before mutation');
+      throw new DefinitelyNotAppliedError('Calendar event version drifted before mutation');
     }
     const next = calendarEventSchema.parse({
       ...current,
@@ -110,9 +113,10 @@ export class InMemoryReferenceCalendarProvider {
 
   #compensateMove(
     before: CalendarEvent,
+    expectedVersion: string,
     idempotencyKey: string,
   ): CalendarProviderCommitResult {
-    const fingerprint = this.#fingerprint({ before, operation: 'compensate' });
+    const fingerprint = this.#fingerprint({ before, expectedVersion, operation: 'compensate' });
     const previous = this.#attempts.get(idempotencyKey);
     if (previous !== undefined) {
       if (previous.fingerprint !== fingerprint) {
@@ -122,7 +126,10 @@ export class InMemoryReferenceCalendarProvider {
     }
     const current = this.#events.get(before.id);
     if (current === undefined) {
-      throw new Error(`Calendar event not found: ${before.id}`);
+      throw new DefinitelyNotAppliedError(`Calendar event not found: ${before.id}`);
+    }
+    if (current.version !== expectedVersion) {
+      throw new DefinitelyNotAppliedError('Calendar event drifted after commit; compensation refused');
     }
     const restored = calendarEventSchema.parse({
       ...before,

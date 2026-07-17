@@ -16,6 +16,7 @@
     "test:gate3": "pnpm build && pnpm --filter @preview/agent-openai test",
     "test:gate3:live": "pnpm build && node --env-file=.env packages/agent-openai/dist/live-gate-three.js",
     "test:gate4": "pnpm build && pnpm --filter @preview/customer-ops-demo test",
+    "test:gate6": "pnpm build && pnpm --filter @preview/customer-ops-demo exec vitest run test/gate-six.test.ts",
     "test:packages": "pnpm -r --if-present test",
     "test:unit": "pnpm build && pnpm --filter @preview/domain test",
     "typecheck": "pnpm build && pnpm typecheck:packages",

@@ -79,7 +79,13 @@ export async function preflightApprovedRevision(input: {
 
   return deepFreeze({
     approvalDigest: approval.approvalDigest,
-    effects: graph.effects,
+    effects: approval.effectOrder.map((effectId) => {
+      const effect = graph.effects.find((candidate) => candidate.id === effectId);
+      if (effect === undefined) {
+        throw new CommitControlError(`Approved effect order references missing effect ${effectId}`);
+      }
+      return effect;
+    }),
     graphDigest,
     revisionId: revision.id,
     snapshotDigest: snapshot.digest,

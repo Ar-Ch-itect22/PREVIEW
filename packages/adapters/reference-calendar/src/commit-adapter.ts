@@ -1,11 +1,13 @@
 import type {
-  CommitAdapter,
   CommitResult,
+  CompensationReconciliationResult,
+  DurableCommitAdapter,
+  ReconciliationResult,
   RevalidationResult,
-  SnapshotRevalidationAdapter,
   VerificationResult,
 } from '@preview/adapter-sdk';
 import { computeCanonicalDigest, type Effect, type Observation } from '@preview/domain';
+import { z } from 'zod';
 
 import type { CalendarCommitPort } from './provider.js';
 import {
@@ -16,8 +18,7 @@ import {
 } from './schemas.js';
 import { REFERENCE_CALENDAR_ADAPTER_ID } from './schemas.js';
 
-export class ReferenceCalendarCommitAdapter implements
-  CommitAdapter<CalendarEvent>, SnapshotRevalidationAdapter {
+export class ReferenceCalendarCommitAdapter implements DurableCommitAdapter<CalendarEvent> {
   public readonly adapterId = REFERENCE_CALENDAR_ADAPTER_ID;
   public readonly adapterVersion = '1.0.0';
   readonly #commitPort: CalendarCommitPort;
@@ -80,6 +81,39 @@ export class ReferenceCalendarCommitAdapter implements
     return result === undefined ? undefined : { applied: result.applied, resource: result.event };
   }
 
+  public async reconcileCommit(
+    effect: Effect,
+    idempotencyKey: string,
+  ): Promise<ReconciliationResult<CalendarEvent>> {
+    const result = await this.reconcile(effect, idempotencyKey);
+    return result === undefined
+      ? { status: 'AUTHORITATIVELY_NOT_APPLIED' }
+      : { result, status: 'APPLIED' };
+  }
+
+  public parseCommitResult(value: unknown): CommitResult<CalendarEvent> {
+    return z.object({ applied: z.boolean(), resource: calendarEventSchema }).parse(value);
+  }
+
+  public async reconcileCompensation(
+    effect: Effect,
+    idempotencyKey: string,
+  ): Promise<CompensationReconciliationResult> {
+    const { precondition } = this.#parseEffect(effect);
+    const result = await this.#commitPort.reconcile(idempotencyKey);
+    if (result === undefined) return { status: 'AUTHORITATIVELY_NOT_APPLIED' };
+    const actual = await this.#commitPort.readEvent(precondition.before.id);
+    const verified = actual?.start === precondition.before.start
+      && actual.end === precondition.before.end;
+    return {
+      status: 'APPLIED',
+      verification: {
+        details: verified ? 'Calendar event compensation verified' : 'Calendar compensation differs',
+        verified,
+      },
+    };
+  }
+
   public async verify(
     effect: Effect,
   ): Promise<VerificationResult> {
@@ -97,11 +131,14 @@ export class ReferenceCalendarCommitAdapter implements
 
   public async compensate(
     effect: Effect,
+    result: CommitResult<CalendarEvent>,
+    idempotencyKey: string,
   ): Promise<VerificationResult> {
     const { precondition } = this.#parseEffect(effect);
     const compensation = await this.#commitPort.compensateMove(
       precondition.before,
-      `compensate:${effect.id}`,
+      result.resource.version,
+      idempotencyKey,
     );
     const restored = calendarEventSchema.parse(compensation.event);
     const verified = restored.start === precondition.before.start

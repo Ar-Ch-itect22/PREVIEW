@@ -68,3 +68,19 @@ This log records actual collaboration only. It is not a substitute for Git histo
 - The live harness reported `providerMutationCount: 0`, `calendarProviderUnchanged: true`, and `mailProviderUnchanged: true`; no provider mutation capability was exposed or invoked.
 - The sealed effect graph digest was `sha256:1bfe485b49ff7d914f625f338adbc7d7d71a65df748a95edc572083950f5ba27`.
 - After the live pass, `pnpm check` passed again: ESLint with zero warnings, eight topological production builds and strict typechecks, and 36 tests across 11 files.
+
+## 2026-07-17 — Gate 4 structured replay and Customer Ops hero
+
+- Codex re-read the repository guidance and Gate 4 pass condition before implementation and kept the primary work in this Core task.
+- Codex implemented immutable replay lineage, staging-boundary constraint enforcement, and approval-path invalidation before adding demo-specific behavior.
+- Codex added a simulation-only Reference CRM adapter and isolated high-value Acme renewal, external attendee, recurrence-scope, and follow-up concepts inside the Customer Ops demo.
+- Revision 1 stages Calendar, Mail, and CRM effects for Acme and Globex. Protecting the Acme Calendar event creates a clean replay on the same base snapshot; repeated guided runs omit Acme's Calendar root and both dependent effects while retaining identical Globex consequences.
+- No Gate 4 model call, real provider, provider mutation, UI, or out-of-scope repository was used. The ignored `.env` was not read or changed.
+
+### Verified results
+
+- Focused replay kernel tests passed: 24 tests across domain, runtime, and approval, including immutable lineage, constraint atomicity, and invalidation of new and already-issued approvals.
+- `pnpm test:gate4` passed: 1 hero integration test covering distinct graph digests, byte-identical providers, repeated deterministic replay, changed Mail consequences, and removal of the complete protected Calendar → Mail/CRM effect group.
+- Focused ESLint and strict typechecks passed for all Gate 4 packages.
+- `pnpm install --frozen-lockfile --offline` passed with the existing minimum-release-age and esbuild-only dependency controls unchanged.
+- `pnpm check` passed: ESLint with zero warnings, ten topological production builds and strict typechecks, and 44 tests across 15 files.

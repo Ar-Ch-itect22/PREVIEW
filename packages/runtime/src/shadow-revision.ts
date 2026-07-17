@@ -1,8 +1,12 @@
+import { isDeepStrictEqual } from 'node:util';
+
 import {
+  ConstraintViolationError,
   DomainInvariantError,
   RevisionDraft,
   type EffectGraph,
   type SimulationRevision,
+  type StructuredConstraint,
 } from '@preview/domain';
 import type { StageContext, StageDependency } from '@preview/adapter-sdk';
 
@@ -27,12 +31,14 @@ export interface StageOptions {
 
 export class ShadowRevisionSession {
   readonly #base = new Map<string, unknown>();
+  readonly #constraints: readonly StructuredConstraint[];
   readonly #draft: RevisionDraft;
   readonly #overlay = new Map<string, OverlayEntry>();
   #status: SessionStatus = 'OPEN';
 
   public constructor(revision: SimulationRevision) {
     this.#draft = new RevisionDraft(revision);
+    this.#constraints = structuredClone(revision.structuredConstraints);
   }
 
   public async read<Resource>(
@@ -59,6 +65,7 @@ export class ShadowRevisionSession {
     ) => StagedMutation<Resource>,
   ): Promise<Resource> {
     this.#assertOpen();
+    this.#assertMutationNotDenied(resourceKey);
     const current = await this.read(resourceKey, readBase);
     const dependencies = this.#resolveDependencies(options.dependencyResourceKeys ?? []);
     const context: StageContext = { dependencies, effectId: options.effectId };
@@ -85,6 +92,7 @@ export class ShadowRevisionSession {
       );
     }
     this.#validateCausality(staged.effect.id, staged.effect.dependencies);
+    this.#assertStagedResourceSatisfiesConstraints(resourceKey, current, staged.resource);
 
     const resource = this.#clone(staged.resource);
     this.#draft.appendEffect(staged.effect);
@@ -161,6 +169,46 @@ export class ShadowRevisionSession {
         resourceKey,
       });
     });
+  }
+
+  #assertMutationNotDenied(resourceKey: string): void {
+    if (this.#constraints.some(
+      (constraint) => constraint.resourceKey === resourceKey && constraint.kind === 'DENY_MUTATION',
+    )) {
+      throw new ConstraintViolationError(resourceKey, 'DENY_MUTATION', 'resource is protected');
+    }
+  }
+
+  #assertStagedResourceSatisfiesConstraints<Resource>(
+    resourceKey: string,
+    current: Resource | undefined,
+    staged: Resource,
+  ): void {
+    for (const constraint of this.#constraints) {
+      if (constraint.resourceKey !== resourceKey) continue;
+      if (constraint.kind === 'PRESERVE_FIELD') {
+        const before = this.#readField(current, constraint.field);
+        const after = this.#readField(staged, constraint.field);
+        if (!isDeepStrictEqual(before, after)) {
+          throw new ConstraintViolationError(
+            resourceKey,
+            constraint.kind,
+            `field ${constraint.field} changed`,
+          );
+        }
+      } else if (constraint.kind === 'REPLACE_VALUE' && !isDeepStrictEqual(staged, constraint.value)) {
+        throw new ConstraintViolationError(
+          resourceKey,
+          constraint.kind,
+          'staged resource does not equal the required replacement',
+        );
+      }
+    }
+  }
+
+  #readField(value: unknown, field: string): unknown {
+    if (value === null || typeof value !== 'object') return undefined;
+    return (value as Record<string, unknown>)[field];
   }
 
   #clone<T>(value: T): T {

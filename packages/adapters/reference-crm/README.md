@@ -1,3 +1,4 @@
 # Reference CRM Adapter
 
-Future reference CRM adapter for the demo package.
+Provider-neutral synthetic CRM read/stage adapter used only by the Customer Ops
+demo. Gate 4 exposes no CRM commit capability.

@@ -19,6 +19,17 @@ export class SealedRevisionMutationError extends DomainInvariantError {
   }
 }
 
+export class ConstraintViolationError extends DomainInvariantError {
+  public constructor(
+    public readonly resourceKey: string,
+    public readonly constraintKind: string,
+    detail: string,
+  ) {
+    super(`Constraint ${constraintKind} rejected mutation on ${resourceKey}: ${detail}`);
+    this.name = 'ConstraintViolationError';
+  }
+}
+
 export class UnsupportedOperationError extends DomainInvariantError {
   public constructor(adapterId: string, operation: string) {
     super(`Unsupported mutation rejected: ${adapterId}.${operation}`);

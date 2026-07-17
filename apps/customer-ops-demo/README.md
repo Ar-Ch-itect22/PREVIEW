@@ -1,3 +1,5 @@
 # Customer Operations Demo
 
-Future synthetic hero proof. Customer-operations concepts belong here and never in the transaction kernel.
+Synthetic Gate 4 hero composition. Customer, renewal, attendee, recurrence, and
+CRM assumptions live only in this package; the transaction kernel stays
+horizontal.

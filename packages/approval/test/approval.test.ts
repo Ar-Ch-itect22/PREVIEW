@@ -85,4 +85,26 @@ describe('content-bound approval', () => {
       new Date('2026-07-15T00:00:00.000Z'),
     )).toThrow(ApprovalValidationError);
   });
+
+  it('rejects both new and already-issued approvals after replay invalidation', () => {
+    const authority = new ContentBoundApprovalAuthority('gate-four-test-signing-key');
+    const revision = sealedRevision();
+    const request = {
+      approverId: 'aru',
+      expiresAt: '2026-07-18T00:00:00.000Z',
+      policyVersion: 'gate-4',
+      tenantId: 'tenant-1',
+    };
+    const approval = authority.approve(revision, request);
+
+    authority.invalidateRevision(revision.id);
+
+    expect(() => authority.approve(revision, request)).toThrow('approval path is invalidated');
+    expect(() => authority.verify(
+      approval,
+      revision,
+      { approverId: 'aru', tenantId: 'tenant-1' },
+      new Date('2026-07-17T00:00:00.000Z'),
+    )).toThrow('approval path is invalidated');
+  });
 });

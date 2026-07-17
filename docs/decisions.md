@@ -99,3 +99,24 @@ Decisions are recorded when made and are never backdated.
 - Context: the current `openai` release was younger than the workspace's 24-hour minimum release age and pnpm correctly rejected it.
 - Decision: pin official OpenAI JavaScript SDK `6.46.0`, the newest tested release that passes the existing supply-chain policy, without changing the minimum release age or build-script allowlist.
 - Consequence: Gate 3 uses the official Responses API SDK while preserving the repository's dependency controls.
+
+## 2026-07-17 — Model replay as immutable revision lineage
+
+- Status: accepted
+- Context: a review correction must not edit a sealed graph in place or leave a stale approval usable.
+- Decision: replay returns an immutable invalidated copy of the prior sealed revision, a clean draft with a new ID and incremented revision number on the same base snapshot, and notifies an injected approval-path invalidator for the prior revision ID.
+- Consequence: prior effects and their digest remain exact evidence, replay constraints have explicit lineage, and both future and already-issued approvals for the old revision fail closed. Durable invalidation storage remains a later persistence concern.
+
+## 2026-07-17 — Enforce structured constraints at the staging boundary
+
+- Status: accepted
+- Context: prompts alone cannot guarantee that a replay respects a user's correction.
+- Decision: the provider-neutral shadow runtime rejects denied mutations before simulation and validates preserve/replacement constraints before atomically appending an effect or overlay value.
+- Consequence: orchestration may replan around a protected resource, but it cannot silently stage an effect that violates the revision's structured constraints.
+
+## 2026-07-17 — Keep Gate 4 customer semantics in the demo composition
+
+- Status: accepted
+- Context: the hero scenario needs renewals, external attendees, recurrence scope, and CRM follow-ups without specializing the transaction kernel.
+- Decision: keep those concepts in `@preview/customer-ops-demo`; implement Reference CRM as a generic read/stage adapter whose exact follow-up value and causal edge derive from runtime-owned staged provenance.
+- Consequence: the hero can group Calendar, Mail, and CRM effects while domain and runtime packages remain horizontal and the CRM provider remains mutation-free at Gate 4.

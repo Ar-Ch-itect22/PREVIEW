@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 
 import {
   approvalSchema,
+  identifierSchema,
   type Approval,
   type SimulationRevision,
 } from '@preview/domain';
@@ -25,6 +26,7 @@ export interface ApprovalRequest {
 type UnsignedApproval = Omit<Approval, 'signature'>;
 
 export class ContentBoundApprovalAuthority {
+  readonly #invalidatedRevisionIds = new Set<string>();
   readonly #signingKey: string;
 
   public constructor(signingKey: string) {
@@ -45,6 +47,10 @@ export class ContentBoundApprovalAuthority {
       tenantId: request.tenantId,
     };
     return Object.freeze(approvalSchema.parse({ ...unsigned, signature: this.#sign(unsigned) }));
+  }
+
+  public invalidateRevision(revisionId: string): void {
+    this.#invalidatedRevisionIds.add(identifierSchema.parse(revisionId));
   }
 
   public verify(
@@ -79,6 +85,9 @@ export class ContentBoundApprovalAuthority {
   }
 
   #validateSealedRevision(revision: Readonly<SimulationRevision>): string {
+    if (this.#invalidatedRevisionIds.has(revision.id)) {
+      throw new ApprovalValidationError(`Revision ${revision.id} approval path is invalidated`);
+    }
     if (revision.status !== 'SEALED' || revision.effectGraph === null || revision.graphDigest === null) {
       throw new ApprovalValidationError('Only a sealed revision can be approved');
     }

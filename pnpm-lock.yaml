@@ -36,6 +36,34 @@ importers:
         specifier: ^8.38.0
         version: 8.63.0(eslint@9.39.5)(typescript@5.9.3)
 
+  apps/customer-ops-demo:
+    dependencies:
+      '@preview/approval':
+        specifier: workspace:*
+        version: link:../../packages/approval
+      '@preview/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
+      '@preview/reference-calendar':
+        specifier: workspace:*
+        version: link:../../packages/adapters/reference-calendar
+      '@preview/reference-crm':
+        specifier: workspace:*
+        version: link:../../packages/adapters/reference-crm
+      '@preview/reference-mail':
+        specifier: workspace:*
+        version: link:../../packages/adapters/reference-mail
+      '@preview/runtime':
+        specifier: workspace:*
+        version: link:../../packages/runtime
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vitest:
+        specifier: 'catalog:'
+        version: 3.2.7(@types/node@24.13.3)
+
   apps/worker:
     dependencies:
       '@preview/adapter-sdk':
@@ -80,6 +108,25 @@ importers:
       '@preview/worker':
         specifier: workspace:*
         version: link:../../../apps/worker
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vitest:
+        specifier: 'catalog:'
+        version: 3.2.7(@types/node@24.13.3)
+
+  packages/adapters/reference-crm:
+    dependencies:
+      '@preview/adapter-sdk':
+        specifier: workspace:*
+        version: link:../../adapter-sdk
+      '@preview/domain':
+        specifier: workspace:*
+        version: link:../../domain
+      zod:
+        specifier: 'catalog:'
+        version: 3.25.76
+    devDependencies:
       typescript:
         specifier: 'catalog:'
         version: 5.9.3

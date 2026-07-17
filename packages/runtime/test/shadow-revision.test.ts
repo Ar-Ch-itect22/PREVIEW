@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { SimulationRevision } from '@preview/domain';
+import { ConstraintViolationError, type SimulationRevision } from '@preview/domain';
 
 import { ShadowRevisionSession } from '../src/index.js';
 
@@ -106,5 +106,53 @@ describe('shadow revision session', () => {
 
     expect(session.inspectEffectGraph().effects).toEqual([]);
     expect(await session.read('resource-1', () => Promise.resolve(undefined))).toBeUndefined();
+  });
+
+  it('enforces deny and preserve constraints before appending an effect', async () => {
+    const deniedRevision = revision();
+    deniedRevision.structuredConstraints = [{
+      kind: 'DENY_MUTATION',
+      resourceKey: 'resource-1',
+    }];
+    const denied = new ShadowRevisionSession(deniedRevision);
+    await expect(denied.stage(
+      'resource-1',
+      () => Promise.resolve({ protected: true }),
+      { effectId: 'effect-denied' },
+      () => {
+        throw new Error('Simulation must not run for denied resources');
+      },
+    )).rejects.toBeInstanceOf(ConstraintViolationError);
+    expect(denied.inspectEffectGraph().effects).toEqual([]);
+
+    const preservedRevision = revision();
+    preservedRevision.structuredConstraints = [{
+      field: 'protected',
+      kind: 'PRESERVE_FIELD',
+      resourceKey: 'resource-1',
+    }];
+    const preserved = new ShadowRevisionSession(preservedRevision);
+    await expect(preserved.stage(
+      'resource-1',
+      () => Promise.resolve({ protected: 'before', value: 'before' }),
+      { effectId: 'effect-preserve' },
+      (_current, context) => ({
+        effect: {
+          adapterId: 'reference',
+          dependencies: [],
+          externalities: [],
+          id: context.effectId,
+          operation: 'update',
+          payload: {},
+          preconditions: [],
+          presentation: { summary: 'Change protected field' },
+          resourceKey: 'resource-1',
+          risk: 'REVERSIBLE',
+          verification: { expected: {}, kind: 'exact' },
+        },
+        resource: { protected: 'after', value: 'before' },
+      }),
+    )).rejects.toThrow('field protected changed');
+    expect(preserved.inspectEffectGraph().effects).toEqual([]);
   });
 });

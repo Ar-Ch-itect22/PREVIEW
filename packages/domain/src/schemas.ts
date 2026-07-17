@@ -140,6 +140,7 @@ export const effectGraphSchema = z.object({
 export type EffectGraph = z.infer<typeof effectGraphSchema>;
 
 export const simulationRevisionSchema = z.object({
+  baseSnapshotDigest: digestSchema.nullable(),
   baseSnapshotId: identifierSchema,
   effectGraph: effectGraphSchema.nullable(),
   graphDigest: digestSchema.nullable(),
@@ -149,32 +150,73 @@ export const simulationRevisionSchema = z.object({
   status: revisionStatusSchema,
   structuredConstraints: z.array(structuredConstraintSchema),
   transactionId: identifierSchema,
+}).superRefine((revision, context) => {
+  if (revision.status === 'DRAFT' && revision.baseSnapshotDigest !== null) {
+    context.addIssue({ code: 'custom', message: 'Draft revisions cannot bind a snapshot digest' });
+  }
+  if (revision.status !== 'DRAFT' && revision.baseSnapshotDigest === null) {
+    context.addIssue({ code: 'custom', message: 'Non-draft revisions require a snapshot digest' });
+  }
 });
 
 export type SimulationRevision = z.infer<typeof simulationRevisionSchema>;
 
 export const approvalSchema = z.object({
+  adapterVersions: z.record(identifierSchema, identifierSchema),
+  approvalDigest: digestSchema,
   approverId: identifierSchema,
+  effectOrder: z.array(identifierSchema),
   expiresAt: timestampSchema,
   graphDigest: digestSchema,
-  policyVersion: identifierSchema,
+  policyVersions: z.record(identifierSchema, identifierSchema),
   revisionId: identifierSchema,
-  signature: z.string().min(1),
+  signature: z.string().regex(/^[a-f0-9]{64}$/u),
+  snapshotDigest: digestSchema,
   tenantId: identifierSchema,
 });
 
 export type Approval = z.infer<typeof approvalSchema>;
 
 export const observationSchema = z.object({
+  adapterId: identifierSchema,
   observedAt: timestampSchema,
-  provider: identifierSchema,
+  presence: z.enum(['PRESENT', 'ABSENT']),
   resourceKey: identifierSchema,
-  valueDigest: digestSchema,
-  valueReference: identifierSchema,
-  version: z.string().min(1),
+  valueDigest: digestSchema.nullable(),
+  version: z.string().min(1).nullable(),
+}).superRefine((observation, context) => {
+  if (observation.presence === 'PRESENT' && observation.valueDigest === null) {
+    context.addIssue({ code: 'custom', message: 'Present observations require a value digest' });
+  }
+  if (
+    observation.presence === 'ABSENT'
+    && (observation.valueDigest !== null || observation.version !== null)
+  ) {
+    context.addIssue({ code: 'custom', message: 'Absent observations cannot have value or version data' });
+  }
 });
 
 export type Observation = z.infer<typeof observationSchema>;
+
+export const snapshotManifestSchema = z.object({
+  digest: digestSchema,
+  observations: z.array(observationSchema),
+}).superRefine((snapshot, context) => {
+  const keys = new Set<string>();
+  for (const [index, observation] of snapshot.observations.entries()) {
+    const key = `${observation.adapterId}\u0000${observation.resourceKey}`;
+    if (keys.has(key)) {
+      context.addIssue({
+        code: 'custom',
+        message: `Duplicate snapshot observation: ${observation.adapterId}/${observation.resourceKey}`,
+        path: ['observations', index],
+      });
+    }
+    keys.add(key);
+  }
+});
+
+export type SnapshotManifest = z.infer<typeof snapshotManifestSchema>;
 
 export const effectAttemptSchema = z.object({
   attemptNumber: z.number().int().positive(),

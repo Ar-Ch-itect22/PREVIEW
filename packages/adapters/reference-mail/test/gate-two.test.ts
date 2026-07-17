@@ -34,9 +34,20 @@ const existingMessage: MailMessage = {
 
 const calendarResourceKey = 'reference-calendar:event:event-1';
 const mailResourceKey = 'reference-mail:message:symbolic-message-1';
+const calendarObservation = {
+  adapterId: 'reference-calendar',
+  observedAt: '2026-07-15T00:00:00.000Z',
+  version: (event: CalendarEvent) => event.version,
+} as const;
+const mailObservation = {
+  adapterId: 'reference-mail',
+  observedAt: '2026-07-15T00:00:00.000Z',
+  version: (message: MailMessage) => message.version,
+} as const;
 
 function revision(id: string): SimulationRevision {
   return {
+    baseSnapshotDigest: null,
     baseSnapshotId: 'snapshot-1',
     effectGraph: null,
     graphDigest: null,
@@ -64,7 +75,7 @@ async function stageCrossAdapterFlow(input: {
   await session.stage(
     calendarResourceKey,
     () => calendar.read(calendarResourceKey),
-    { effectId: 'effect-calendar-move' },
+    { effectId: 'effect-calendar-move', observation: calendarObservation },
     (current, context) => calendar.stage(current, {
       end: '2026-07-27T10:30:00.000Z',
       eventId: 'event-1',
@@ -75,6 +86,7 @@ async function stageCrossAdapterFlow(input: {
   const movedEvent = await session.read(
     calendarResourceKey,
     () => calendar.read(calendarResourceKey),
+    calendarObservation,
   );
   if (movedEvent === undefined) {
     throw new Error('Expected staged Calendar event');
@@ -88,6 +100,7 @@ async function stageCrossAdapterFlow(input: {
     {
       dependencyResourceKeys: [calendarResourceKey],
       effectId: 'effect-attendee-mail',
+      observation: mailObservation,
     },
     (current, context) => mail.stage(current, {
       messageId: 'symbolic-message-1',
@@ -144,7 +157,11 @@ describe('Gate 2 cross-adapter shadow execution', () => {
       revisionId: 'sealed',
     });
 
-    expect(await session.read(mailResourceKey, () => mail.read(mailResourceKey))).toEqual({
+    expect(await session.read(
+      mailResourceKey,
+      () => mail.read(mailResourceKey),
+      mailObservation,
+    )).toEqual({
       id: 'symbolic-message-1',
       recipients: ['attendee@example.test'],
       state: 'STAGED',
@@ -190,7 +207,7 @@ describe('Gate 2 cross-adapter shadow execution', () => {
     await session.stage(
       calendarResourceKey,
       () => calendar.read(calendarResourceKey),
-      { effectId: 'effect-calendar-move' },
+      { effectId: 'effect-calendar-move', observation: calendarObservation },
       (current, context) => calendar.stage(current, {
         end: '2026-07-27T10:30:00.000Z',
         eventId: 'event-1',
@@ -201,7 +218,7 @@ describe('Gate 2 cross-adapter shadow execution', () => {
     await expect(session.stage(
       mailResourceKey,
       () => mail.read(mailResourceKey),
-      { effectId: 'effect-attendee-mail' },
+      { effectId: 'effect-attendee-mail', observation: mailObservation },
       (current, context) => mail.stage(current, {
         messageId: 'symbolic-message-1',
         recipients: ['attendee@example.test'],

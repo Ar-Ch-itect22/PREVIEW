@@ -4,6 +4,7 @@ export const digest = `sha256:${'a'.repeat(64)}`;
 
 export function makeRevision(): SimulationRevision {
   return {
+    baseSnapshotDigest: null,
     baseSnapshotId: 'snapshot-1',
     effectGraph: null,
     graphDigest: null,

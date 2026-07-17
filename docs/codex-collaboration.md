@@ -84,3 +84,19 @@ This log records actual collaboration only. It is not a substitute for Git histo
 - Focused ESLint and strict typechecks passed for all Gate 4 packages.
 - `pnpm install --frozen-lockfile --offline` passed with the existing minimum-release-age and esbuild-only dependency controls unchanged.
 - `pnpm check` passed: ESLint with zero warnings, ten topological production builds and strict typechecks, and 44 tests across 15 files.
+
+## 2026-07-17 — Gate 5 approval, drift, and tamper resistance
+
+- Codex re-read the repository guidance and exact Gate 5 pass condition before implementation and kept commit/recovery, UI, and real-provider work out of scope.
+- Codex extended shadow execution so every base read must capture a runtime-owned immutable present or absent observation, sealing binds the complete snapshot digest into the revision, and the Customer Ops hero produces its real synthetic snapshot manifest.
+- Codex implemented a canonical approval manifest binding the exact effect graph, snapshot digest, constraints, dependency-safe ordering, adapter versions, policy versions, identity, tenant, revision/transaction identity, and expiration.
+- Codex implemented a worker preflight over separate versioned read-only revalidation adapters. It checks the complete signed read set concurrently and returns a deeply frozen plan only when every resource is unchanged; no commit capability is accepted by this boundary.
+- A bounded read-only design review identified missing snapshot capture/coverage, absent-resource semantics, current version-manifest checks, and the need to keep preflight separate from mutation capability.
+- A second bounded final audit then demonstrated three bypasses in the initial implementation: caller-supplied snapshot substitution, optional observation capture for read-only dependencies, and the exported Gate 1 commit path skipping complete-read-set preflight. Codex bound the snapshot digest into sealed revisions, made capture mandatory and runtime-owned, and routed every new single-effect mutation through full snapshot preflight. Persistence, durable replay invalidation, and the preflight-to-commit lease remain Gate 6 work.
+- No credential, model call, UI, real provider, provider write, external message, or out-of-scope repository was used. The ignored `.env` was not read or changed.
+
+### Verified results
+
+- Focused Gate 5 and affected regression suites passed: domain 15 tests, runtime 6 tests, approval 6 tests, worker preflight 3 tests, Gate 1 Calendar 8 tests, Gate 2 Mail 3 tests, Gate 3 orchestration 7 tests, and Gate 4 hero replay 1 test.
+- Tests prove recipient and one-byte payload tampering rejection; sealed snapshot, constraint, adapter-version, and policy-version binding; snapshot-substitution rejection; wrong-user, wrong-tenant, expiration, and replay invalidation; complete Calendar/CRM-present and Mail-absent revalidation; read-only dependency drift blocking through the exported commit control; immutable plans; and zero PREVIEW provider mutations.
+- `pnpm check` passed: ESLint with zero warnings, ten topological production builds and strict package typechecks, and 51 tests across 16 files.

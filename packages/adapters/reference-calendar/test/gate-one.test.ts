@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import {
   ApprovalValidationError,
   ContentBoundApprovalAuthority,
+  computeCanonicalDigest,
   computeEffectGraphDigest,
+  createSnapshotManifest,
 } from '@preview/approval';
 import type { CommitAdapter } from '@preview/adapter-sdk';
 import type { Effect, SimulationRevision } from '@preview/domain';
@@ -26,9 +28,45 @@ const originalEvent: CalendarEvent = {
 };
 
 const resourceKey = 'reference-calendar:event:event-1';
+const snapshot = createSnapshotManifest([{
+  adapterId: 'reference-calendar',
+  observedAt: '2026-07-15T00:00:00.000Z',
+  presence: 'PRESENT',
+  resourceKey,
+  valueDigest: computeCanonicalDigest(originalEvent),
+  version: 'v1',
+}]);
+const calendarObservation = {
+  adapterId: 'reference-calendar',
+  observedAt: '2026-07-15T00:00:00.000Z',
+  version: (event: CalendarEvent) => event.version,
+} as const;
+
+function approvalRequest(snapshotManifest = snapshot) {
+  return {
+    adapterVersions: { 'reference-calendar': '1.0.0' },
+    approverId: 'aru',
+    expiresAt: '2026-07-16T00:00:00.000Z',
+    policyVersions: { transaction: 'gate-1' },
+    snapshot: snapshotManifest,
+    tenantId: 'tenant-1',
+  } as const;
+}
+
+function approvalContext(snapshotManifest = snapshot) {
+  const request = approvalRequest(snapshotManifest);
+  return {
+    adapterVersions: request.adapterVersions,
+    approverId: request.approverId,
+    policyVersions: request.policyVersions,
+    snapshot: request.snapshot,
+    tenantId: request.tenantId,
+  };
+}
 
 function revision(id: string): SimulationRevision {
   return {
+    baseSnapshotDigest: null,
     baseSnapshotId: 'snapshot-1',
     effectGraph: null,
     graphDigest: null,
@@ -50,11 +88,11 @@ async function stageMove(
 }> {
   const simulation = new ReferenceCalendarSimulationAdapter(provider.createReadPort());
   const session = new ShadowRevisionSession(revision(revisionId));
-  await session.read(resourceKey, () => simulation.read(resourceKey));
+  await session.read(resourceKey, () => simulation.read(resourceKey), calendarObservation);
   await session.stage(
     resourceKey,
     () => simulation.read(resourceKey),
-    { effectId: `effect-${revisionId}` },
+    { effectId: `effect-${revisionId}`, observation: calendarObservation },
     (current, context) => simulation.stage(current, {
       end: '2026-07-27T10:30:00.000Z',
       eventId: 'event-1',
@@ -107,7 +145,11 @@ describe('Gate 1 Reference Calendar', () => {
     const beforeBytes = provider.snapshotBytes();
     const { session, simulation } = await stageMove(provider, 'abort');
 
-    expect(await session.read(resourceKey, () => simulation.read(resourceKey))).toEqual({
+    expect(await session.read(
+      resourceKey,
+      () => simulation.read(resourceKey),
+      calendarObservation,
+    )).toEqual({
       ...originalEvent,
       end: '2026-07-27T10:30:00.000Z',
       start: '2026-07-27T10:00:00.000Z',
@@ -137,19 +179,15 @@ describe('Gate 1 Reference Calendar', () => {
     const { session } = await stageMove(provider, 'commit');
     const sealed = session.seal(computeEffectGraphDigest);
     const authority = new ContentBoundApprovalAuthority('gate-one-test-signing-key');
-    const approval = authority.approve(sealed, {
-      approverId: 'aru',
-      expiresAt: '2026-07-16T00:00:00.000Z',
-      policyVersion: 'gate-1',
-      tenantId: 'tenant-1',
-    });
+    const approval = authority.approve(sealed, approvalRequest());
     const commit = new ReferenceCalendarCommitAdapter(provider.createCommitPort());
     const request = {
       adapter: commit,
       approval,
+      approvalContext: approvalContext(),
       authority,
-      identity: { approverId: 'aru', tenantId: 'tenant-1' },
       now: new Date('2026-07-15T00:00:00.000Z'),
+      revalidationAdapters: [commit],
       revision: sealed,
     };
 
@@ -171,24 +209,21 @@ describe('Gate 1 Reference Calendar', () => {
     const { session } = await stageMove(provider, 'invalid-approval');
     const sealed = session.seal(computeEffectGraphDigest);
     const authority = new ContentBoundApprovalAuthority('gate-one-test-signing-key');
-    const approval = authority.approve(sealed, {
-      approverId: 'aru',
-      expiresAt: '2026-07-16T00:00:00.000Z',
-      policyVersion: 'gate-1',
-      tenantId: 'tenant-1',
-    });
+    const approval = authority.approve(sealed, approvalRequest());
     const firstCharacter = approval.signature.startsWith('0') ? '1' : '0';
     const invalidApproval = {
       ...approval,
       signature: `${firstCharacter}${approval.signature.slice(1)}`,
     };
 
+    const commit = new ReferenceCalendarCommitAdapter(provider.createCommitPort());
     await expect(commitApprovedSingleEffect({
-      adapter: new ReferenceCalendarCommitAdapter(provider.createCommitPort()),
+      adapter: commit,
       approval: invalidApproval,
+      approvalContext: approvalContext(),
       authority,
-      identity: { approverId: 'aru', tenantId: 'tenant-1' },
       now: new Date('2026-07-15T00:00:00.000Z'),
+      revalidationAdapters: [commit],
       revision: sealed,
     })).rejects.toThrow(ApprovalValidationError);
     expect(provider.mutationCount).toBe(0);
@@ -199,12 +234,7 @@ describe('Gate 1 Reference Calendar', () => {
     const { session } = await stageMove(provider, 'immutable-snapshot');
     const mutableRevision = structuredClone(session.seal(computeEffectGraphDigest));
     const authority = new ContentBoundApprovalAuthority('gate-one-test-signing-key');
-    const approval = authority.approve(mutableRevision, {
-      approverId: 'aru',
-      expiresAt: '2026-07-16T00:00:00.000Z',
-      policyVersion: 'gate-1',
-      tenantId: 'tenant-1',
-    });
+    const approval = authority.approve(mutableRevision, approvalRequest());
     const delegate = new ReferenceCalendarCommitAdapter(provider.createCommitPort());
     const mutatingAdapter: CommitAdapter<CalendarEvent> = {
       adapterId: delegate.adapterId,
@@ -224,9 +254,10 @@ describe('Gate 1 Reference Calendar', () => {
     const result = await commitApprovedSingleEffect({
       adapter: mutatingAdapter,
       approval,
+      approvalContext: approvalContext(),
       authority,
-      identity: { approverId: 'aru', tenantId: 'tenant-1' },
       now: new Date('2026-07-15T00:00:00.000Z'),
+      revalidationAdapters: [delegate],
       revision: mutableRevision,
     });
 
@@ -249,19 +280,16 @@ describe('Gate 1 Reference Calendar', () => {
     precondition.version = 'v2';
     inconsistent.graphDigest = computeEffectGraphDigest(graph);
     const authority = new ContentBoundApprovalAuthority('gate-one-test-signing-key');
-    const approval = authority.approve(inconsistent, {
-      approverId: 'aru',
-      expiresAt: '2026-07-16T00:00:00.000Z',
-      policyVersion: 'gate-1',
-      tenantId: 'tenant-1',
-    });
+    const approval = authority.approve(inconsistent, approvalRequest());
 
+    const commit = new ReferenceCalendarCommitAdapter(provider.createCommitPort());
     await expect(commitApprovedSingleEffect({
-      adapter: new ReferenceCalendarCommitAdapter(provider.createCommitPort()),
+      adapter: commit,
       approval,
+      approvalContext: approvalContext(),
       authority,
-      identity: { approverId: 'aru', tenantId: 'tenant-1' },
       now: new Date('2026-07-15T00:00:00.000Z'),
+      revalidationAdapters: [commit],
       revision: inconsistent,
     })).rejects.toThrow('Precondition version does not match observed event');
     expect(provider.mutationCount).toBe(0);
@@ -272,18 +300,15 @@ describe('Gate 1 Reference Calendar', () => {
     const { session } = await stageMove(provider, 'concurrent');
     const sealed = session.seal(computeEffectGraphDigest);
     const authority = new ContentBoundApprovalAuthority('gate-one-test-signing-key');
-    const approval = authority.approve(sealed, {
-      approverId: 'aru',
-      expiresAt: '2026-07-16T00:00:00.000Z',
-      policyVersion: 'gate-1',
-      tenantId: 'tenant-1',
-    });
+    const approval = authority.approve(sealed, approvalRequest());
+    const commit = new ReferenceCalendarCommitAdapter(provider.createCommitPort());
     const request = {
-      adapter: new ReferenceCalendarCommitAdapter(provider.createCommitPort()),
+      adapter: commit,
       approval,
+      approvalContext: approvalContext(),
       authority,
-      identity: { approverId: 'aru', tenantId: 'tenant-1' },
       now: new Date('2026-07-15T00:00:00.000Z'),
+      revalidationAdapters: [commit],
       revision: sealed,
     };
 
@@ -302,12 +327,7 @@ describe('Gate 1 Reference Calendar', () => {
     const { session } = await stageMove(provider, 'drift');
     const sealed = session.seal(computeEffectGraphDigest);
     const authority = new ContentBoundApprovalAuthority('gate-one-test-signing-key');
-    const approval = authority.approve(sealed, {
-      approverId: 'aru',
-      expiresAt: '2026-07-16T00:00:00.000Z',
-      policyVersion: 'gate-1',
-      tenantId: 'tenant-1',
-    });
+    const approval = authority.approve(sealed, approvalRequest());
     await provider.createCommitPort().commitMove({
       end: '2026-07-20T11:30:00.000Z',
       eventId: 'event-1',
@@ -315,14 +335,66 @@ describe('Gate 1 Reference Calendar', () => {
     }, 'v1', 'external-drift-fixture');
     const mutationsBeforeAttempt = provider.mutationCount;
 
+    const commit = new ReferenceCalendarCommitAdapter(provider.createCommitPort());
     await expect(commitApprovedSingleEffect({
-      adapter: new ReferenceCalendarCommitAdapter(provider.createCommitPort()),
+      adapter: commit,
       approval,
+      approvalContext: approvalContext(),
       authority,
-      identity: { approverId: 'aru', tenantId: 'tenant-1' },
       now: new Date('2026-07-15T00:00:00.000Z'),
+      revalidationAdapters: [commit],
       revision: sealed,
     })).rejects.toThrow(CommitControlError);
+    expect(provider.mutationCount).toBe(mutationsBeforeAttempt);
+  });
+
+  it('cannot bypass complete-read-set preflight through the exported commit control', async () => {
+    const dependencyEvent: CalendarEvent = {
+      end: '2026-07-20T12:30:00.000Z',
+      id: 'dependency-event',
+      start: '2026-07-20T12:00:00.000Z',
+      title: 'Read-only scheduling dependency',
+      version: 'v1',
+    };
+    const provider = new InMemoryReferenceCalendarProvider([originalEvent, dependencyEvent]);
+    const simulation = new ReferenceCalendarSimulationAdapter(provider.createReadPort());
+    const session = new ShadowRevisionSession(revision('complete-read-set'));
+    await session.read(
+      'reference-calendar:event:dependency-event',
+      () => simulation.read('reference-calendar:event:dependency-event'),
+      calendarObservation,
+    );
+    await session.stage(
+      resourceKey,
+      () => simulation.read(resourceKey),
+      { effectId: 'effect-complete-read-set', observation: calendarObservation },
+      (current, context) => simulation.stage(current, {
+        end: '2026-07-27T10:30:00.000Z',
+        eventId: 'event-1',
+        start: '2026-07-27T10:00:00.000Z',
+      }, context),
+    );
+    const completeSnapshot = createSnapshotManifest(session.inspectObservations());
+    const sealed = session.seal(computeEffectGraphDigest);
+    const authority = new ContentBoundApprovalAuthority('gate-five-bypass-signing-key');
+    const approval = authority.approve(sealed, approvalRequest(completeSnapshot));
+    await provider.createCommitPort().commitMove({
+      end: '2026-07-20T13:30:00.000Z',
+      eventId: 'dependency-event',
+      start: '2026-07-20T13:00:00.000Z',
+    }, 'v1', 'external-dependency-drift');
+    const mutationsBeforeAttempt = provider.mutationCount;
+    const commit = new ReferenceCalendarCommitAdapter(provider.createCommitPort());
+
+    await expect(commitApprovedSingleEffect({
+      adapter: commit,
+      approval,
+      approvalContext: approvalContext(completeSnapshot),
+      authority,
+      now: new Date('2026-07-15T00:00:00.000Z'),
+      revalidationAdapters: [commit],
+      revision: sealed,
+    })).rejects.toThrow('dependency-event');
     expect(provider.mutationCount).toBe(mutationsBeforeAttempt);
   });
 });

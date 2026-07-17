@@ -50,6 +50,7 @@ describe('effect graph causality', () => {
 
   it('fails the revision sealing boundary for an unknown dependency', () => {
     const revision: SimulationRevision = {
+      baseSnapshotDigest: null,
       baseSnapshotId: 'snapshot-1',
       effectGraph: null,
       graphDigest: null,
@@ -63,6 +64,9 @@ describe('effect graph causality', () => {
     const draft = new RevisionDraft(revision);
     draft.appendEffect(effect('dependent', ['missing']));
 
-    expect(() => draft.seal(`sha256:${'a'.repeat(64)}`)).toThrow('depends on unknown effect');
+    expect(() => draft.seal(
+      `sha256:${'a'.repeat(64)}`,
+      `sha256:${'b'.repeat(64)}`,
+    )).toThrow('depends on unknown effect');
   });
 });

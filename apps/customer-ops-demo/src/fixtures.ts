@@ -88,6 +88,7 @@ export function createHeroProviders(): HeroProviders {
 
 export function createHeroDraft(id: string): SimulationRevision {
   return {
+    baseSnapshotDigest: null,
     baseSnapshotId: 'hero-snapshot-1',
     effectGraph: null,
     graphDigest: null,

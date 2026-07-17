@@ -44,11 +44,12 @@ export class RevisionDraft {
     this.#constraints.push(structuredClone(structuredConstraintSchema.parse(constraint)));
   }
 
-  public seal(graphDigest: string): Readonly<SimulationRevision> {
+  public seal(graphDigest: string, baseSnapshotDigest: string): Readonly<SimulationRevision> {
     this.#assertDraft();
     const graph: EffectGraph = effectGraphSchema.parse({ effects: this.#effects, version: 1 });
     const sealed = simulationRevisionSchema.parse({
       ...this.#revision,
+      baseSnapshotDigest,
       effectGraph: graph,
       graphDigest,
       status: 'SEALED',
@@ -61,6 +62,7 @@ export class RevisionDraft {
   public snapshot(): Readonly<SimulationRevision> {
     return deepFreeze(structuredClone({
       ...this.#revision,
+      baseSnapshotDigest: null,
       effectGraph: { effects: this.#effects, version: 1 },
       structuredConstraints: this.#constraints,
     }));

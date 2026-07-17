@@ -32,6 +32,7 @@ export const existingMessage: MailMessage = {
 
 export function draftRevision(id: string): SimulationRevision {
   return {
+    baseSnapshotDigest: null,
     baseSnapshotId: 'snapshot-1',
     effectGraph: null,
     graphDigest: null,

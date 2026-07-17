@@ -120,3 +120,17 @@ Decisions are recorded when made and are never backdated.
 - Context: the hero scenario needs renewals, external attendees, recurrence scope, and CRM follow-ups without specializing the transaction kernel.
 - Decision: keep those concepts in `@preview/customer-ops-demo`; implement Reference CRM as a generic read/stage adapter whose exact follow-up value and causal edge derive from runtime-owned staged provenance.
 - Consequence: the hero can group Calendar, Mail, and CRM effects while domain and runtime packages remain horizontal and the CRM provider remains mutation-free at Gate 4.
+
+## 2026-07-17 — Bind approval to a complete canonical manifest
+
+- Status: accepted
+- Context: a graph-only digest cannot detect a changed constraint, stale adapter or policy semantics, a substituted observation snapshot, or a changed execution order.
+- Decision: compute a second canonical approval digest over the validated immutable graph, graph digest, snapshot digest, structured constraints, dependency-safe effect order, adapter-version manifest, policy-version manifest, identity, tenant, transaction/revision identity, and expiration; sign the parsed approval record containing that digest.
+- Consequence: any exact-content, snapshot, constraint, version, ordering, identity, tenant, or expiration mismatch invalidates the approval before provider access.
+
+## 2026-07-17 — Separate complete-read-set preflight from commit capability
+
+- Status: accepted
+- Context: effect-local revalidation cannot cover absent resources or reads that do not directly produce an effect, and accepting commit adapters during drift checking would weaken the no-write-before-preflight boundary.
+- Decision: every shadow base read records a runtime-owned present/absent observation, sealing writes the canonical snapshot digest into the immutable revision, approval rejects any substituted snapshot, and the worker revalidates the entire signed snapshot through versioned read-only adapters before returning a frozen commit plan.
+- Consequence: changed, missing, or newly appeared effect targets and read-only dependencies block the whole plan while preflight has no provider mutation capability; the existing single-effect mutation control also requires this preflight before a new provider write. Durable execution and closing the preflight-to-commit race remain Gate 6 work.

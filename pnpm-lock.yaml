@@ -69,6 +69,9 @@ importers:
       '@preview/adapter-sdk':
         specifier: workspace:*
         version: link:../../packages/adapter-sdk
+      '@preview/approval':
+        specifier: workspace:*
+        version: link:../../packages/approval
       '@preview/domain':
         specifier: workspace:*
         version: link:../../packages/domain
@@ -76,6 +79,9 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
+      vitest:
+        specifier: 'catalog:'
+        version: 3.2.7(@types/node@24.13.3)
 
   packages/adapter-sdk:
     dependencies:

@@ -1,3 +1,4 @@
+export * from './canonical.js';
 export * from './errors.js';
 export * from './operation-registry.js';
 export * from './replay.js';

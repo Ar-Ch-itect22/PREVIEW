@@ -33,6 +33,7 @@ const existingMessage: MailMessage = {
 };
 
 const revision: SimulationRevision = {
+  baseSnapshotDigest: null,
   baseSnapshotId: 'snapshot-live-gate-three',
   effectGraph: null,
   graphDigest: null,

@@ -5,6 +5,7 @@ import type { SimulationRevision } from '@preview/domain';
 import { ReplayCoordinator } from '../src/index.js';
 
 const prior: SimulationRevision = {
+  baseSnapshotDigest: `sha256:${'b'.repeat(64)}`,
   baseSnapshotId: 'snapshot-1',
   effectGraph: { effects: [], version: 1 },
   graphDigest: `sha256:${'a'.repeat(64)}`,

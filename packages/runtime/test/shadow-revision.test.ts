@@ -6,6 +6,7 @@ import { ShadowRevisionSession } from '../src/index.js';
 
 function revision(): SimulationRevision {
   return {
+    baseSnapshotDigest: null,
     baseSnapshotId: 'snapshot-1',
     effectGraph: null,
     graphDigest: null,
@@ -18,6 +19,11 @@ function revision(): SimulationRevision {
   };
 }
 
+const observation = {
+  adapterId: 'reference',
+  observedAt: '2026-07-17T00:00:00.000Z',
+} as const;
+
 describe('shadow revision session', () => {
   it('returns staged data from later reads without mutating base data', async () => {
     const base = { id: 'resource-1', value: 'before' };
@@ -26,7 +32,7 @@ describe('shadow revision session', () => {
     await session.stage(
       'resource-1',
       () => Promise.resolve(base),
-      { effectId: 'effect-1' },
+      { effectId: 'effect-1', observation },
       (current, context) => {
         if (current === undefined) {
           throw new Error('Expected base resource');
@@ -50,11 +56,26 @@ describe('shadow revision session', () => {
       },
     );
 
-    expect(await session.read('resource-1', () => Promise.resolve(base))).toEqual({
+    expect(await session.read('resource-1', () => Promise.resolve(base), observation)).toEqual({
       id: 'resource-1',
       value: 'after',
     });
     expect(base).toEqual({ id: 'resource-1', value: 'before' });
+  });
+
+  it('captures immutable present and absent base observations, never overlay values', async () => {
+    const session = new ShadowRevisionSession(revision());
+    const present = { id: 'resource-1', value: 'before', version: 'v1' };
+    await session.read('resource-1', () => Promise.resolve(present), {
+      ...observation,
+      version: (resource) => resource.version,
+    });
+    await session.read('missing', () => Promise.resolve(undefined), observation);
+
+    const observations = session.inspectObservations();
+    expect(observations.map((observation) => observation.presence)).toEqual(['ABSENT', 'PRESENT']);
+    expect(Object.isFrozen(observations)).toBe(true);
+    expect(Object.isFrozen(observations[0])).toBe(true);
   });
 
   it('appends neither overlay nor effect when simulation fails', async () => {
@@ -64,7 +85,7 @@ describe('shadow revision session', () => {
       session.stage<{ value: string }>(
         'resource-1',
         () => Promise.resolve({ value: 'before' }),
-        { effectId: 'effect-1' },
+        { effectId: 'effect-1', observation },
         () => {
           throw new Error('simulation rejected');
         },
@@ -72,7 +93,11 @@ describe('shadow revision session', () => {
     ).rejects.toThrow('simulation rejected');
 
     expect(session.inspectEffectGraph().effects).toEqual([]);
-    expect(await session.read('resource-1', () => Promise.resolve({ value: 'before' }))).toEqual({
+    expect(await session.read(
+      'resource-1',
+      () => Promise.resolve({ value: 'before' }),
+      observation,
+    )).toEqual({
       value: 'before',
     });
   });
@@ -84,7 +109,11 @@ describe('shadow revision session', () => {
       session.stage<{ value: string }>(
         'resource-1',
         () => Promise.resolve(undefined),
-        { dependencyResourceKeys: ['missing-resource'], effectId: 'effect-1' },
+        {
+          dependencyResourceKeys: ['missing-resource'],
+          effectId: 'effect-1',
+          observation,
+        },
         (_current, context) => ({
           effect: {
             adapterId: 'reference',
@@ -105,7 +134,11 @@ describe('shadow revision session', () => {
     ).rejects.toThrow('Dependency resource missing-resource is not staged');
 
     expect(session.inspectEffectGraph().effects).toEqual([]);
-    expect(await session.read('resource-1', () => Promise.resolve(undefined))).toBeUndefined();
+    expect(await session.read(
+      'resource-1',
+      () => Promise.resolve(undefined),
+      observation,
+    )).toBeUndefined();
   });
 
   it('enforces deny and preserve constraints before appending an effect', async () => {
@@ -118,7 +151,7 @@ describe('shadow revision session', () => {
     await expect(denied.stage(
       'resource-1',
       () => Promise.resolve({ protected: true }),
-      { effectId: 'effect-denied' },
+      { effectId: 'effect-denied', observation },
       () => {
         throw new Error('Simulation must not run for denied resources');
       },
@@ -135,7 +168,7 @@ describe('shadow revision session', () => {
     await expect(preserved.stage(
       'resource-1',
       () => Promise.resolve({ protected: 'before', value: 'before' }),
-      { effectId: 'effect-preserve' },
+      { effectId: 'effect-preserve', observation },
       (_current, context) => ({
         effect: {
           adapterId: 'reference',

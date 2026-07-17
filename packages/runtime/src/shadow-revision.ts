@@ -4,7 +4,11 @@ import {
   ConstraintViolationError,
   DomainInvariantError,
   RevisionDraft,
+  computeCanonicalDigest,
+  createSnapshotManifest,
+  observationSchema,
   type EffectGraph,
+  type Observation,
   type SimulationRevision,
   type StructuredConstraint,
 } from '@preview/domain';
@@ -17,6 +21,12 @@ export interface StagedMutation<Resource> {
 
 export type GraphDigestFactory = (graph: EffectGraph) => string;
 
+export interface ObservationOptions<Resource> {
+  readonly adapterId: string;
+  readonly observedAt: string;
+  readonly version?: (resource: Resource) => string | null;
+}
+
 type SessionStatus = 'OPEN' | 'SEALED' | 'ABORTED';
 
 interface OverlayEntry {
@@ -24,15 +34,17 @@ interface OverlayEntry {
   readonly resource: unknown;
 }
 
-export interface StageOptions {
+export interface StageOptions<Resource> {
   readonly dependencyResourceKeys?: readonly string[];
   readonly effectId: string;
+  readonly observation: ObservationOptions<Resource>;
 }
 
 export class ShadowRevisionSession {
   readonly #base = new Map<string, unknown>();
   readonly #constraints: readonly StructuredConstraint[];
   readonly #draft: RevisionDraft;
+  readonly #observations = new Map<string, Observation>();
   readonly #overlay = new Map<string, OverlayEntry>();
   #status: SessionStatus = 'OPEN';
 
@@ -44,6 +56,7 @@ export class ShadowRevisionSession {
   public async read<Resource>(
     resourceKey: string,
     readBase: () => Promise<Resource | undefined>,
+    observation: ObservationOptions<Resource>,
   ): Promise<Resource | undefined> {
     this.#assertOpen();
     if (this.#overlay.has(resourceKey)) {
@@ -52,13 +65,31 @@ export class ShadowRevisionSession {
     if (!this.#base.has(resourceKey)) {
       this.#base.set(resourceKey, this.#clone(await readBase()));
     }
+    this.#captureObservation(
+      resourceKey,
+      this.#clone(this.#base.get(resourceKey) as Resource | undefined),
+      observation,
+    );
     return this.#clone(this.#base.get(resourceKey) as Resource | undefined);
+  }
+
+  public inspectObservations(): readonly Readonly<Observation>[] {
+    this.#assertOpen();
+    return deepFreeze([...this.#observations.values()]
+      .toSorted((left, right) => {
+        const leftKey = `${left.adapterId}\u0000${left.resourceKey}`;
+        const rightKey = `${right.adapterId}\u0000${right.resourceKey}`;
+        if (leftKey < rightKey) return -1;
+        if (leftKey > rightKey) return 1;
+        return 0;
+      })
+      .map((observation) => structuredClone(observation)));
   }
 
   public async stage<Resource>(
     resourceKey: string,
     readBase: () => Promise<Resource | undefined>,
-    options: StageOptions,
+    options: StageOptions<Resource>,
     simulate: (
       current: Resource | undefined,
       context: StageContext,
@@ -66,7 +97,7 @@ export class ShadowRevisionSession {
   ): Promise<Resource> {
     this.#assertOpen();
     this.#assertMutationNotDenied(resourceKey);
-    const current = await this.read(resourceKey, readBase);
+    const current = await this.read(resourceKey, readBase, options.observation);
     const dependencies = this.#resolveDependencies(options.dependencyResourceKeys ?? []);
     const context: StageContext = { dependencies, effectId: options.effectId };
     const staged = simulate(current, context);
@@ -112,7 +143,8 @@ export class ShadowRevisionSession {
   public seal(createDigest: GraphDigestFactory): Readonly<SimulationRevision> {
     this.#assertOpen();
     const digest = createDigest(this.inspectEffectGraph());
-    const sealed = this.#draft.seal(digest);
+    const snapshot = createSnapshotManifest(this.inspectObservations());
+    const sealed = this.#draft.seal(digest, snapshot.digest);
     this.#status = 'SEALED';
     this.#overlay.clear();
     return sealed;
@@ -122,6 +154,7 @@ export class ShadowRevisionSession {
     this.#assertOpen();
     this.#overlay.clear();
     this.#base.clear();
+    this.#observations.clear();
     this.#status = 'ABORTED';
   }
 
@@ -133,6 +166,34 @@ export class ShadowRevisionSession {
     if (this.#status !== 'OPEN') {
       throw new DomainInvariantError(`Shadow revision is ${this.#status.toLowerCase()}`);
     }
+  }
+
+  #captureObservation<Resource>(
+    resourceKey: string,
+    resource: Resource | undefined,
+    options: ObservationOptions<Resource>,
+  ): void {
+    const parsed = observationSchema.parse(resource === undefined ? {
+      adapterId: options.adapterId,
+      observedAt: options.observedAt,
+      presence: 'ABSENT',
+      resourceKey,
+      valueDigest: null,
+      version: null,
+    } : {
+      adapterId: options.adapterId,
+      observedAt: options.observedAt,
+      presence: 'PRESENT',
+      resourceKey,
+      valueDigest: computeCanonicalDigest(resource),
+      version: options.version?.(resource) ?? null,
+    });
+    const key = `${parsed.adapterId}\u0000${parsed.resourceKey}`;
+    const prior = this.#observations.get(key);
+    if (prior !== undefined && !isDeepStrictEqual(prior, parsed)) {
+      throw new DomainInvariantError(`Observation changed for cached resource ${resourceKey}`);
+    }
+    this.#observations.set(key, structuredClone(parsed));
   }
 
   #validateCausality(effectId: string, dependencies: readonly string[]): void {
@@ -214,4 +275,12 @@ export class ShadowRevisionSession {
   #clone<T>(value: T): T {
     return value === undefined ? value : structuredClone(value);
   }
+}
+
+function deepFreeze<T>(value: T): Readonly<T> {
+  if (value !== null && typeof value === 'object' && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const nested of Object.values(value)) deepFreeze(nested);
+  }
+  return value;
 }

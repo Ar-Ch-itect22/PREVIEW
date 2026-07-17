@@ -2,9 +2,10 @@ import type {
   CommitAdapter,
   CommitResult,
   RevalidationResult,
+  SnapshotRevalidationAdapter,
   VerificationResult,
 } from '@preview/adapter-sdk';
-import type { Effect } from '@preview/domain';
+import { computeCanonicalDigest, type Effect, type Observation } from '@preview/domain';
 
 import type { CalendarCommitPort } from './provider.js';
 import {
@@ -15,8 +16,10 @@ import {
 } from './schemas.js';
 import { REFERENCE_CALENDAR_ADAPTER_ID } from './schemas.js';
 
-export class ReferenceCalendarCommitAdapter implements CommitAdapter<CalendarEvent> {
+export class ReferenceCalendarCommitAdapter implements
+  CommitAdapter<CalendarEvent>, SnapshotRevalidationAdapter {
   public readonly adapterId = REFERENCE_CALENDAR_ADAPTER_ID;
+  public readonly adapterVersion = '1.0.0';
   readonly #commitPort: CalendarCommitPort;
 
   public constructor(commitPort: CalendarCommitPort) {
@@ -32,6 +35,33 @@ export class ReferenceCalendarCommitAdapter implements CommitAdapter<CalendarEve
     return {
       currentVersion: current.version,
       status: current.version === precondition.version ? 'UNCHANGED' : 'DRIFTED',
+    };
+  }
+
+  public async revalidateObservation(observation: Observation): Promise<RevalidationResult> {
+    const prefix = `${this.adapterId}:event:`;
+    if (observation.adapterId !== this.adapterId || !observation.resourceKey.startsWith(prefix)) {
+      throw new TypeError('Calendar observation does not match this adapter');
+    }
+    const eventId = observation.resourceKey.slice(prefix.length);
+    const current = await this.#commitPort.readEvent(eventId);
+    if (observation.presence === 'ABSENT') {
+      return {
+        currentVersion: current?.version,
+        status: current === undefined ? 'UNCHANGED' : 'APPEARED',
+      };
+    }
+    if (current === undefined) {
+      return { currentVersion: undefined, status: 'MISSING' };
+    }
+    const currentValueDigest = computeCanonicalDigest(current);
+    return {
+      currentValueDigest,
+      currentVersion: current.version,
+      status: current.version === observation.version
+        && currentValueDigest === observation.valueDigest
+        ? 'UNCHANGED'
+        : 'DRIFTED',
     };
   }
 

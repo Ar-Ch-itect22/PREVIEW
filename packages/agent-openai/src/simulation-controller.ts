@@ -33,6 +33,8 @@ interface StagedCalendar {
   readonly resourceKey: string;
 }
 
+const OBSERVED_AT = '2026-07-15T00:00:00.000Z';
+
 export class PreviewSimulationController {
   readonly #calendar: ReferenceCalendarSimulationAdapter;
   readonly #calendarReads = new Set<string>();
@@ -125,7 +127,11 @@ export class PreviewSimulationController {
     const { eventId } = calendarReadEventArgumentsSchema.parse(rawArguments);
     const resourceKey = this.#calendarResourceKey(eventId);
     const staged = this.#stagedCalendar?.eventId === eventId;
-    const event = await this.#session.read(resourceKey, () => this.#calendar.read(resourceKey));
+    const event = await this.#session.read(
+      resourceKey,
+      () => this.#calendar.read(resourceKey),
+      this.#calendarObservation(),
+    );
     this.#calendarReads.add(eventId);
     if (staged) this.#calendarRereads.add(eventId);
     return { event: event ?? null, source: staged ? 'STAGED_REVISION' : 'BASE' };
@@ -152,7 +158,10 @@ export class PreviewSimulationController {
     const event = await this.#session.stage(
       resourceKey,
       () => this.#calendar.read(resourceKey),
-      { effectId: this.#nextEffectId('calendar-move') },
+      {
+        effectId: this.#nextEffectId('calendar-move'),
+        observation: this.#calendarObservation(),
+      },
       (current, context) => this.#calendar.stage(current, input, context),
     );
     this.#stagedCalendar = { eventId: input.eventId, resourceKey };
@@ -162,7 +171,11 @@ export class PreviewSimulationController {
   async #readMail(rawArguments: unknown): Promise<{ readonly message: MailMessage | null }> {
     const { messageId } = mailReadMessageArgumentsSchema.parse(rawArguments);
     const resourceKey = this.#mailResourceKey(messageId);
-    const message = await this.#session.read(resourceKey, () => this.#mail.read(resourceKey));
+    const message = await this.#session.read(
+      resourceKey,
+      () => this.#mail.read(resourceKey),
+      this.#mailObservation(),
+    );
     return { message: message ?? null };
   }
 
@@ -190,6 +203,7 @@ export class PreviewSimulationController {
     const sourceEvent = await this.#session.read(
       stagedCalendar.resourceKey,
       () => this.#calendar.read(stagedCalendar.resourceKey),
+      this.#calendarObservation(),
     );
     if (sourceEvent === undefined) {
       throw new RecoverableToolCallError('SIMULATION_REJECTED', 'Staged Calendar event is missing');
@@ -201,6 +215,7 @@ export class PreviewSimulationController {
       {
         dependencyResourceKeys: [stagedCalendar.resourceKey],
         effectId: this.#nextEffectId('mail-message'),
+        observation: this.#mailObservation(),
       },
       (current, context) => this.#mail.stage(current, {
         messageId: input.messageId,
@@ -222,8 +237,24 @@ export class PreviewSimulationController {
     return `${this.#calendar.adapterId}:event:${eventId}`;
   }
 
+  #calendarObservation() {
+    return {
+      adapterId: this.#calendar.adapterId,
+      observedAt: OBSERVED_AT,
+      version: (event: CalendarEvent) => event.version,
+    };
+  }
+
   #mailResourceKey(messageId: string): string {
     return `${this.#mail.adapterId}:message:${messageId}`;
+  }
+
+  #mailObservation() {
+    return {
+      adapterId: this.#mail.adapterId,
+      observedAt: OBSERVED_AT,
+      version: (message: MailMessage) => message.version,
+    };
   }
 
   #lastEffect(): unknown {

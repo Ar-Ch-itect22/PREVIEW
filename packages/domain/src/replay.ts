@@ -41,6 +41,7 @@ export function createReplayRevision(
     status: 'INVALIDATED',
   });
   const replayRevision = simulationRevisionSchema.parse({
+    baseSnapshotDigest: null,
     baseSnapshotId: prior.baseSnapshotId,
     effectGraph: null,
     graphDigest: null,

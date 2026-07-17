@@ -1,4 +1,8 @@
-import type { CommitAdapter, CommitResult } from '@preview/adapter-sdk';
+import type {
+  CommitAdapter,
+  CommitResult,
+  SnapshotRevalidationAdapter,
+} from '@preview/adapter-sdk';
 import {
   approvalSchema,
   simulationRevisionSchema,
@@ -6,38 +10,25 @@ import {
   type SimulationRevision,
 } from '@preview/domain';
 
-export interface ApprovalVerifier {
-  verify(
-    approval: Approval,
-    revision: Readonly<SimulationRevision>,
-    expected: { approverId: string; tenantId: string },
-    now: Date,
-  ): void;
-}
-
-export interface CommitIdentity {
-  readonly approverId: string;
-  readonly tenantId: string;
-}
-
-export class CommitControlError extends Error {
-  public constructor(message: string) {
-    super(message);
-    this.name = 'CommitControlError';
-  }
-}
+import {
+  CommitControlError,
+  type ApprovalVerificationContext,
+  type ApprovalVerifier,
+} from './approval-control.js';
+import { preflightApprovedRevision } from './approved-preflight.js';
 
 export async function commitApprovedSingleEffect<Resource>(input: {
   readonly adapter: CommitAdapter<Resource>;
   readonly approval: Approval;
+  readonly approvalContext: ApprovalVerificationContext;
   readonly authority: ApprovalVerifier;
-  readonly identity: CommitIdentity;
   readonly now: Date;
+  readonly revalidationAdapters: readonly SnapshotRevalidationAdapter[];
   readonly revision: Readonly<SimulationRevision>;
 }): Promise<CommitResult<Resource>> {
   const approval = deepFreeze(approvalSchema.parse(structuredClone(input.approval)));
   const revision = deepFreeze(simulationRevisionSchema.parse(structuredClone(input.revision)));
-  input.authority.verify(approval, revision, input.identity, input.now);
+  input.authority.verify(approval, revision, input.approvalContext, input.now);
 
   const graph = revision.effectGraph;
   const digest = revision.graphDigest;
@@ -56,10 +47,14 @@ export async function commitApprovedSingleEffect<Resource>(input: {
     return previous;
   }
 
-  const revalidation = await input.adapter.revalidate(effect);
-  if (revalidation.status !== 'UNCHANGED') {
-    throw new CommitControlError(`Commit blocked by ${revalidation.status.toLowerCase()} provider state`);
-  }
+  await preflightApprovedRevision({
+    adapters: input.revalidationAdapters,
+    approval,
+    authority: input.authority,
+    context: input.approvalContext,
+    now: input.now,
+    revision,
+  });
 
   const result = await input.adapter.commit(effect, idempotencyKey);
   await assertVerified(input.adapter, effect, result);

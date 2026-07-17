@@ -8,9 +8,10 @@ describe('revision sealing', () => {
     const draft = new RevisionDraft(makeRevision());
     draft.appendEffect(makeEffect());
 
-    const sealed = draft.seal(digest);
+    const sealed = draft.seal(digest, digest);
 
     expect(sealed.status).toBe('SEALED');
+    expect(sealed.baseSnapshotDigest).toBe(digest);
     expect(sealed.graphDigest).toBe(digest);
     expect(sealed.effectGraph?.effects).toEqual([makeEffect()]);
     expect(Object.isFrozen(sealed)).toBe(true);
@@ -19,13 +20,13 @@ describe('revision sealing', () => {
 
   it('rejects all mutation after sealing', () => {
     const draft = new RevisionDraft(makeRevision());
-    draft.seal(digest);
+    draft.seal(digest, digest);
 
     expect(() => draft.appendEffect(makeEffect())).toThrow(SealedRevisionMutationError);
     expect(() =>
       draft.addConstraint({ kind: 'DENY_MUTATION', resourceKey: 'resource-1' }),
     ).toThrow(SealedRevisionMutationError);
-    expect(() => draft.seal(digest)).toThrow(SealedRevisionMutationError);
+    expect(() => draft.seal(digest, digest)).toThrow(SealedRevisionMutationError);
   });
 
   it('does not alias caller-owned effect data', () => {
@@ -34,6 +35,6 @@ describe('revision sealing', () => {
     draft.appendEffect(effect);
     (effect.payload as { value: string }).value = 'tampered';
 
-    expect(draft.seal(digest).effectGraph?.effects[0]?.payload).toEqual({ value: 'after' });
+    expect(draft.seal(digest, digest).effectGraph?.effects[0]?.payload).toEqual({ value: 'after' });
   });
 });

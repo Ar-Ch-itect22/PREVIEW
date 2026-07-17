@@ -54,12 +54,26 @@ describe('Gate 4 Customer Ops replay', () => {
     );
 
     const authority = new ContentBoundApprovalAuthority('gate-four-signing-key');
-    const oldApproval = authority.approve(revisionOne.revision, {
+    const approvalRequest = {
+      adapterVersions: {
+        'reference-calendar': '1.0.0',
+        'reference-crm': '1.0.0',
+        'reference-mail': '1.0.0',
+      },
       approverId: 'aru',
       expiresAt: '2026-07-20T00:00:00.000Z',
-      policyVersion: 'gate-4',
+      policyVersions: { transaction: 'gate-4' },
+      snapshot: revisionOne.snapshot,
       tenantId: 'tenant-1',
-    });
+    } as const;
+    const approvalContext = {
+      adapterVersions: approvalRequest.adapterVersions,
+      approverId: approvalRequest.approverId,
+      policyVersions: approvalRequest.policyVersions,
+      snapshot: approvalRequest.snapshot,
+      tenantId: approvalRequest.tenantId,
+    };
+    const oldApproval = authority.approve(revisionOne.revision, approvalRequest);
     const firstReplay = protectCalendarEvent(
       revisionOne.revision,
       'acme-renewal',
@@ -76,16 +90,13 @@ describe('Gate 4 Customer Ops replay', () => {
       revisionNumber: 2,
       status: 'DRAFT',
     });
-    expect(() => authority.approve(revisionOne.revision, {
-      approverId: 'aru',
-      expiresAt: '2026-07-20T00:00:00.000Z',
-      policyVersion: 'gate-4',
-      tenantId: 'tenant-1',
-    })).toThrow(ApprovalValidationError);
+    expect(() => authority.approve(revisionOne.revision, approvalRequest)).toThrow(
+      ApprovalValidationError,
+    );
     expect(() => authority.verify(
       oldApproval,
       revisionOne.revision,
-      { approverId: 'aru', tenantId: 'tenant-1' },
+      approvalContext,
       new Date('2026-07-17T00:00:00.000Z'),
     )).toThrow(ApprovalValidationError);
 

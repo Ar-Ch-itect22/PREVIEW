@@ -333,6 +333,8 @@ Pass when:
 - Changing provider state after preview blocks all writes.
 - Wrong-user, wrong-tenant, expired, and replayed approvals fail.
 
+Implementation status (2026-07-17): passed locally. Every shadow base read captures a runtime-owned immutable present/absent observation, sealing binds that complete snapshot digest into the revision, and approval binds the exact graph, sealed snapshot, constraints, dependency-safe effect order, adapter and policy versions, identity, tenant, and expiration. The worker accepts only read-only revalidation capabilities, completes the full snapshot check before a new commit may mutate, and returns an immutable plan. Recipient/payload tampering, snapshot substitution, effect-target and read-only dependency drift, wrong identity/tenant, expiration, stale versions, and replay-invalidated revisions fail closed.
+
 ### Gate 6 — Durable saga and Failure Lab
 
 Failure scenario:

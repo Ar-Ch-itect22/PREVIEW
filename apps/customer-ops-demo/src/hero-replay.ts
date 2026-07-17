@@ -1,9 +1,13 @@
-import { computeEffectGraphDigest } from '@preview/approval';
+import {
+  computeEffectGraphDigest,
+  createSnapshotManifest,
+} from '@preview/approval';
 import {
   ConstraintViolationError,
   type Effect,
   type ReplayRevisionTransition,
   type SimulationRevision,
+  type SnapshotManifest,
 } from '@preview/domain';
 import { ReferenceCalendarSimulationAdapter } from '@preview/reference-calendar';
 import { ReferenceCrmSimulationAdapter } from '@preview/reference-crm';
@@ -28,6 +32,7 @@ export interface CustomerEffectGroup {
 export interface CustomerOpsSimulationResult {
   readonly effectGroups: readonly CustomerEffectGroup[];
   readonly revision: Readonly<SimulationRevision>;
+  readonly snapshot: Readonly<SnapshotManifest>;
 }
 
 export async function runCustomerOpsSimulation(
@@ -45,6 +50,7 @@ export async function runCustomerOpsSimulation(
     const observed = await session.read(
       calendarResourceKey,
       () => calendar.read(calendarResourceKey),
+      observationOptions(calendar.adapterId),
     );
     if (observed === undefined) throw new Error(`Missing hero event ${meeting.eventId}`);
     const calendarEffectId = `effect:calendar:${meeting.eventId}`;
@@ -52,7 +58,7 @@ export async function runCustomerOpsSimulation(
       await session.stage(
         calendarResourceKey,
         () => calendar.read(calendarResourceKey),
-        { effectId: calendarEffectId },
+        { effectId: calendarEffectId, observation: observationOptions(calendar.adapterId) },
         (current, context) => calendar.stage(current, {
           end: shiftIsoByDays(observed.end, 7),
           eventId: meeting.eventId,
@@ -73,17 +79,24 @@ export async function runCustomerOpsSimulation(
     const moved = await session.read(
       calendarResourceKey,
       () => calendar.read(calendarResourceKey),
+      observationOptions(calendar.adapterId),
     );
     if (moved === undefined) throw new Error(`Missing staged hero event ${meeting.eventId}`);
 
     const mailResourceKey = `${mail.adapterId}:message:${meeting.mailMessageId}`;
     const mailEffectId = `effect:mail:${meeting.mailMessageId}`;
+    await session.read(
+      mailResourceKey,
+      () => mail.read(mailResourceKey),
+      observationOptions(mail.adapterId),
+    );
     await session.stage(
       mailResourceKey,
       () => mail.read(mailResourceKey),
       {
         dependencyResourceKeys: [calendarResourceKey],
         effectId: mailEffectId,
+        observation: observationOptions(mail.adapterId),
       },
       (current, context) => mail.stage(current, {
         messageId: meeting.mailMessageId,
@@ -100,12 +113,18 @@ export async function runCustomerOpsSimulation(
 
     const crmResourceKey = `${crm.adapterId}:record:${meeting.crmRecordId}`;
     const crmEffectId = `effect:crm:${meeting.crmRecordId}`;
+    await session.read(
+      crmResourceKey,
+      () => crm.read(crmResourceKey),
+      observationOptions(crm.adapterId),
+    );
     await session.stage(
       crmResourceKey,
       () => crm.read(crmResourceKey),
       {
         dependencyResourceKeys: [calendarResourceKey],
         effectId: crmEffectId,
+        observation: observationOptions(crm.adapterId),
       },
       (current, context) => crm.stage(current, {
         recordId: meeting.crmRecordId,
@@ -121,8 +140,9 @@ export async function runCustomerOpsSimulation(
     }));
   }
 
+  const snapshot = createSnapshotManifest(session.inspectObservations());
   const revision = session.seal(computeEffectGraphDigest);
-  return Object.freeze({ effectGroups: Object.freeze(effectGroups), revision });
+  return Object.freeze({ effectGroups: Object.freeze(effectGroups), revision, snapshot });
 }
 
 export function protectCalendarEvent(
@@ -155,4 +175,18 @@ function shiftIsoByDays(value: string, days: number): string {
   if (Number.isNaN(date.getTime())) throw new Error(`Invalid hero fixture date: ${value}`);
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString();
+}
+
+function observationOptions(adapterId: string) {
+  return {
+    adapterId,
+    observedAt: '2026-07-17T00:00:00.000Z',
+    version: readVersion,
+  };
+}
+
+function readVersion(resource: unknown): string | null {
+  if (resource === null || typeof resource !== 'object') return null;
+  const version = (resource as { version?: unknown }).version;
+  return typeof version === 'string' ? version : null;
 }

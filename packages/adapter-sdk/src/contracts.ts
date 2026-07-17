@@ -1,4 +1,4 @@
-import type { Effect } from '@preview/domain';
+import type { Effect, Observation } from '@preview/domain';
 
 export interface StageDependency {
   readonly effectId: string;
@@ -25,8 +25,15 @@ export interface SimulationAdapter<Resource, Mutation, Diff> {
 }
 
 export interface RevalidationResult {
+  readonly currentValueDigest?: string;
   readonly currentVersion: string | undefined;
-  readonly status: 'UNCHANGED' | 'DRIFTED' | 'MISSING';
+  readonly status: 'UNCHANGED' | 'DRIFTED' | 'MISSING' | 'APPEARED';
+}
+
+export interface SnapshotRevalidationAdapter {
+  readonly adapterId: string;
+  readonly adapterVersion: string;
+  revalidateObservation(observation: Observation): Promise<RevalidationResult>;
 }
 
 export interface CommitResult<Resource> {

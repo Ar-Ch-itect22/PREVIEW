@@ -6,6 +6,7 @@ import { digest, makeEffect, makeRevision } from './fixtures.js';
 function sealedRevision() {
   return {
     ...makeRevision(),
+    baseSnapshotDigest: digest,
     effectGraph: { effects: [makeEffect()], version: 1 as const },
     graphDigest: digest,
     status: 'SEALED' as const,
@@ -28,6 +29,7 @@ describe('replay revision lineage', () => {
       status: 'INVALIDATED',
     });
     expect(transition.replayRevision).toEqual({
+      baseSnapshotDigest: null,
       baseSnapshotId: 'snapshot-1',
       effectGraph: null,
       graphDigest: null,

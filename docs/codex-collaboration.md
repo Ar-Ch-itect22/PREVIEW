@@ -44,3 +44,27 @@ This log records actual collaboration only. It is not a substitute for Git histo
 
 - `pnpm test:gate2` passed: 1 file, 3 focused tests for staged Calendar-derived Mail content, immutable causal sealing, byte-identical abort, and missing-provenance rejection.
 - `pnpm check` passed: ESLint with zero warnings, seven topological production builds and strict typechecks, and 29 tests across 8 files.
+
+## 2026-07-15 — Gate 3 implementation to the credential boundary
+
+- Aru authorized the official OpenAI JavaScript SDK, Responses API, and `gpt-5.6` alias for the strict tool loop.
+- Codex re-read the repository guidance and Gate 3 pass condition, then implemented a bounded simulation-only loop over the existing read-only Calendar and Mail adapter ports.
+- Official OpenAI documentation was consulted for the model alias, Responses function-call outputs, strict schema requirements, supported JSON Schema fields, and disabling parallel tool calls. The local OpenAI documentation MCP was unavailable, so the official developer documentation site was used as the fallback.
+- The current SDK release was rejected by the unchanged minimum-release-age policy; Codex pinned the prior mature official release instead of weakening the control.
+- No credential was read or requested, no live model call was made, no provider mutation capability was exposed, and no Gate 3 live-model pass is claimed. The local `.env` file is absent, so the pass condition remains blocked at the explicitly authorized credential boundary.
+
+### Verified results
+
+- `pnpm test:gate3` passed: 3 files, 7 tests covering the official SDK request mapping, strict mocked-client turns, deterministic cross-adapter orchestration, staged rereads, exact dependent content, local schema rejection, and unknown-write fail-closed behavior.
+- Focused ESLint passed with zero warnings for `packages/agent-openai`.
+- `pnpm install --frozen-lockfile --offline` passed with the 24-hour minimum release age and esbuild-only build-script allowlist unchanged.
+- `pnpm check` passed: ESLint with zero warnings, eight topological production builds and strict typechecks, and 36 tests across 11 files.
+
+## 2026-07-17 — Gate 3 live verification
+
+- Aru configured API billing and retained the project-scoped OpenAI credential only in the ignored local `.env` file; the credential value was neither printed nor shared with Codex.
+- Codex ran the live Gate 3 harness against `gpt-5.6` through the Responses API.
+- The model completed four simulation-only tool calls spanning Reference Calendar and Reference Mail, producing two deterministic staged effects and a sealed revision.
+- The live harness reported `providerMutationCount: 0`, `calendarProviderUnchanged: true`, and `mailProviderUnchanged: true`; no provider mutation capability was exposed or invoked.
+- The sealed effect graph digest was `sha256:1bfe485b49ff7d914f625f338adbc7d7d71a65df748a95edc572083950f5ba27`.
+- After the live pass, `pnpm check` passed again: ESLint with zero warnings, eight topological production builds and strict typechecks, and 36 tests across 11 files.

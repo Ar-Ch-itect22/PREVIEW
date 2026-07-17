@@ -1,0 +1,30 @@
+{
+  "name": "@preview/agent-openai",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@preview/approval": "workspace:*",
+    "@preview/domain": "workspace:*",
+    "@preview/reference-calendar": "workspace:*",
+    "@preview/reference-mail": "workspace:*",
+    "@preview/runtime": "workspace:*",
+    "openai": "6.46.0",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

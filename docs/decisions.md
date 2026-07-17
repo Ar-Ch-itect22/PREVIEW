@@ -85,3 +85,17 @@ Decisions are recorded when made and are never backdated.
 - Context: Gate 2 proves cross-adapter shadow execution, not irreversible delivery or recovery.
 - Decision: expose only a Mail read port and simulation adapter, classify send-message as irreversible with an external-delivery externality, and implement no Mail commit capability yet.
 - Consequence: the agent can inspect exact Mail consequences but cannot deliver a message.
+
+## 2026-07-15 — Keep GPT orchestration behind a strict simulation-only dispatcher
+
+- Status: accepted
+- Context: Gate 3 needs a real Responses API loop without allowing model output to define transaction semantics or reach provider mutation capability.
+- Decision: expose only four strict Reference Calendar and Reference Mail read/stage tools, validate arguments again locally with strict Zod schemas, disable parallel tool calls, assign effect IDs in PREVIEW, require the Calendar stage/reread/Mail dependency sequence, and seal only after the controller validates the deterministic graph.
+- Consequence: GPT-5.6 may choose and sequence simulation calls, but PREVIEW remains the sole owner of effect content, risk, externalities, causality, digesting, and the fail-closed boundary; no commit capability is present in the agent package.
+
+## 2026-07-15 — Pin a mature official OpenAI SDK release
+
+- Status: accepted
+- Context: the current `openai` release was younger than the workspace's 24-hour minimum release age and pnpm correctly rejected it.
+- Decision: pin official OpenAI JavaScript SDK `6.46.0`, the newest tested release that passes the existing supply-chain policy, without changing the minimum release age or build-script allowlist.
+- Consequence: Gate 3 uses the official Responses API SDK while preserving the repository's dependency controls.

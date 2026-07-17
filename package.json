@@ -13,6 +13,8 @@
     "test": "pnpm build && pnpm test:packages",
     "test:gate1": "pnpm build && pnpm --filter @preview/reference-calendar test",
     "test:gate2": "pnpm build && pnpm --filter @preview/reference-mail test",
+    "test:gate3": "pnpm build && pnpm --filter @preview/agent-openai test",
+    "test:gate3:live": "pnpm build && node --env-file=.env packages/agent-openai/dist/live-gate-three.js",
     "test:packages": "pnpm -r --if-present test",
     "test:unit": "pnpm build && pnpm --filter @preview/domain test",
     "typecheck": "pnpm build && pnpm typecheck:packages",

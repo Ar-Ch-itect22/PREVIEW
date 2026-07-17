@@ -115,6 +115,37 @@ importers:
         specifier: 'catalog:'
         version: 3.2.7(@types/node@24.13.3)
 
+  packages/agent-openai:
+    dependencies:
+      '@preview/approval':
+        specifier: workspace:*
+        version: link:../approval
+      '@preview/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@preview/reference-calendar':
+        specifier: workspace:*
+        version: link:../adapters/reference-calendar
+      '@preview/reference-mail':
+        specifier: workspace:*
+        version: link:../adapters/reference-mail
+      '@preview/runtime':
+        specifier: workspace:*
+        version: link:../runtime
+      openai:
+        specifier: 6.46.0
+        version: 6.46.0(zod@3.25.76)
+      zod:
+        specifier: 'catalog:'
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vitest:
+        specifier: 'catalog:'
+        version: 3.2.7(@types/node@24.13.3)
+
   packages/approval:
     dependencies:
       '@preview/domain':
@@ -907,6 +938,26 @@ packages:
 
   natural-compare@1.4.0:
     resolution: {integrity: sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw==}
+
+  openai@6.46.0:
+    resolution: {integrity: sha512-DFg6jEPT2RO+oAyXtddeUJU8zkGy1OQ1AjGzNIJUMQG03TTqvCpy9tBpQ+2VVVnvrl3E56F8GEin2JYtWpITtA==}
+    peerDependencies:
+      '@aws-sdk/credential-provider-node': '>=3.972.0 <4'
+      '@smithy/hash-node': '>=4.3.0 <5'
+      '@smithy/signature-v4': '>=5.4.0 <6'
+      ws: ^8.18.0
+      zod: ^3.25 || ^4.0
+    peerDependenciesMeta:
+      '@aws-sdk/credential-provider-node':
+        optional: true
+      '@smithy/hash-node':
+        optional: true
+      '@smithy/signature-v4':
+        optional: true
+      ws:
+        optional: true
+      zod:
+        optional: true
 
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
@@ -1806,6 +1857,10 @@ snapshots:
   nanoid@3.3.16: {}
 
   natural-compare@1.4.0: {}
+
+  openai@6.46.0(zod@3.25.76):
+    optionalDependencies:
+      zod: 3.25.76
 
   optionator@0.9.4:
     dependencies:

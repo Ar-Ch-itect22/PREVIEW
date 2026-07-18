@@ -204,3 +204,16 @@ This log records actual collaboration only. It is not a substitute for Git histo
 - Aru identified a clipped reset control in the committed receipt while explicitly keeping the existing visual system locked.
 - Codex corrected the reset control's width specificity so it maintains equal insets inside the receipt.
 - The focused console suite passed all five tests and its production build passed. Live layout inspection confirmed equal reset-button insets and no horizontal overflow.
+## 2026-07-19 — Honest scenario context, explicit decisions, and Live Sandbox
+
+- Aruvansh challenged whether the polished browser surface was merely a canned demo and pointed out that accept/decline controls were not obvious. Codex audited the actual boundary: Judge Mode already exercised the real runtime and worker over synthetic providers, while the previously verified GPT-5.6 loop and Google adapters were not visible in the UI.
+- Codex replaced the unsupported `$1.25M at risk` assertion with customer-operations fixture facts: contract value, renewal deadline, proposed meeting date, and external recipient. Human controls are now grouped as protect-and-replay, approve the exact graph, or abort with zero writes.
+- Codex connected the existing strict GPT-5.6 Responses API orchestration to a separate Live Sandbox endpoint and product panel. The API key remains server-side; the model receives only four read/stage tools; the server verifies synthetic Calendar and Mail providers remain unchanged before returning a sealed graph.
+- Codex added an implementation-evidence panel that explicitly distinguishes synthetic Judge Mode providers from the real runtime and from the separately credential-certified Google Calendar/Gmail run. It preserves the claim boundary rather than implying Judge Mode touches real accounts.
+
+### Verified results
+
+- Repository ESLint, all 17 production builds, and all strict package typechecks passed.
+- The focused console suite passed 6 tests, including the new Live Sandbox provider-integrity proof. Customer Operations passed 18 tests and the OpenAI orchestration package passed 7 tests using Vitest's runner config loader to avoid the known Windows/OneDrive config-bundling failure.
+- A synthetic HTTP run passed READY → REVIEW with 6 effects → REPLAYED with 3 effects → APPROVED on Revision 02 → `COMMITTED_VERIFIED`, with 3 approved writes, 0 residuals, and 0 unresolved outcomes.
+- One live request through the new HTTP bridge used `gpt-5.6`, made 4 strict tool calls, sealed a Calendar → Mail graph with 2 effects, and returned 0 provider writes with both provider snapshots unchanged.

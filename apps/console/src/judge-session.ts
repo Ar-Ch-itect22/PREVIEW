@@ -49,6 +49,13 @@ export interface ProviderStateView {
   readonly unchangedFromBase: boolean;
 }
 
+export interface ScenarioContextView {
+  readonly attendeeRecipients: readonly string[];
+  readonly customerName: string;
+  readonly renewalDeadline: string;
+  readonly renewalValueUsd: number;
+}
+
 export interface JudgeSessionView {
   readonly approval: Readonly<Approval> | null;
   readonly effectCount: number;
@@ -63,6 +70,7 @@ export interface JudgeSessionView {
   readonly replayConstraint: string | null;
   readonly revisionId: string | null;
   readonly revisionNumber: number | null;
+  readonly scenarioContext: readonly ScenarioContextView[];
   readonly snapshotDigest: string | null;
   readonly transactionId: string;
 }
@@ -215,6 +223,12 @@ export class JudgeSession {
         : null,
       revisionId: revision?.id ?? null,
       revisionNumber: revision?.revisionNumber ?? null,
+      scenarioContext: Object.freeze(customerMeetings.map((meeting) => Object.freeze({
+        attendeeRecipients: Object.freeze([...meeting.attendeeRecipients]),
+        customerName: meeting.customerName,
+        renewalDeadline: meeting.renewalDeadline,
+        renewalValueUsd: meeting.renewalValueUsd,
+      }))),
       snapshotDigest: revision?.baseSnapshotDigest ?? null,
       transactionId: 'hero-transaction-1',
     }));

@@ -5,6 +5,11 @@ import { extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { JudgeSession, JudgeSessionError } from './judge-session.js';
+import {
+  LIVE_SANDBOX_SAMPLE_INTENT,
+  LiveSandboxRunner,
+  LiveSandboxUnavailableError,
+} from './live-sandbox.js';
 
 const PUBLIC_DIRECTORY = fileURLToPath(new URL('../public/', import.meta.url));
 const CONTENT_TYPES: Readonly<Record<string, string>> = Object.freeze({
@@ -15,17 +20,44 @@ const CONTENT_TYPES: Readonly<Record<string, string>> = Object.freeze({
 
 export function createJudgeServer() {
   let session = new JudgeSession();
+  const liveSandbox = new LiveSandboxRunner();
+  let liveRunInFlight = false;
   return createServer((request, response) => {
     void (async () => {
       try {
         const url = new URL(request.url ?? '/', 'http://preview.local');
         if (url.pathname.startsWith('/api/')) {
+          if (request.method === 'GET' && url.pathname === '/api/live-sandbox') {
+            writeJson(response, 200, {
+              available: liveSandbox.available,
+              model: 'gpt-5.6',
+              providerMode: 'ISOLATED_SYNTHETIC',
+              sampleIntent: LIVE_SANDBOX_SAMPLE_INTENT,
+              toolAuthority: 'STAGE_ONLY',
+            });
+            return;
+          }
           if (request.method === 'GET' && url.pathname === '/api/session') {
             writeJson(response, 200, await session.view());
             return;
           }
           if (request.method !== 'POST') {
             writeJson(response, 405, { error: 'Method not allowed' });
+            return;
+          }
+          if (url.pathname === '/api/live-sandbox/run') {
+            if (liveRunInFlight) {
+              writeJson(response, 409, { error: 'A Live Sandbox run is already in progress' });
+              return;
+            }
+            const body = await readJsonBody(request);
+            const intent = typeof body.intent === 'string' ? body.intent : '';
+            liveRunInFlight = true;
+            try {
+              writeJson(response, 200, await liveSandbox.run(intent));
+            } finally {
+              liveRunInFlight = false;
+            }
             return;
           }
           switch (url.pathname) {
@@ -55,13 +87,43 @@ export function createJudgeServer() {
         }
         await serveAsset(url.pathname, request, response);
       } catch (error) {
-        const status = error instanceof JudgeSessionError ? 409 : 500;
+        const status = error instanceof JudgeSessionError
+          ? 409
+          : error instanceof LiveSandboxUnavailableError
+            ? 400
+            : 500;
         writeJson(response, status, {
           error: error instanceof Error ? error.message : 'Unknown Judge Mode error',
         });
       }
     })();
   });
+}
+
+async function readJsonBody(request: IncomingMessage): Promise<Record<string, unknown>> {
+  const chunks: Buffer[] = [];
+  let total = 0;
+  for await (const chunk of request) {
+    const value: unknown = chunk;
+    const bytes = typeof value === 'string'
+      ? Buffer.from(value)
+      : value instanceof Uint8Array
+        ? Buffer.from(value)
+        : (() => { throw new LiveSandboxUnavailableError('Unsupported request body chunk'); })();
+    total += bytes.length;
+    if (total > 16_384) throw new LiveSandboxUnavailableError('Request body is too large');
+    chunks.push(bytes);
+  }
+  try {
+    const parsed = JSON.parse(Buffer.concat(chunks).toString('utf8')) as unknown;
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new TypeError('Request body must be an object');
+    }
+    return parsed as Record<string, unknown>;
+  } catch (error) {
+    if (error instanceof LiveSandboxUnavailableError) throw error;
+    throw new LiveSandboxUnavailableError('Request body must be valid JSON');
+  }
 }
 
 async function serveAsset(

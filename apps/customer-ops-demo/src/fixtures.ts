@@ -15,6 +15,7 @@ export interface CustomerMeeting {
   readonly eventId: string;
   readonly mailMessageId: string;
   readonly recurrenceScope: 'SERIES' | 'THIS_EVENT';
+  readonly renewalDeadline: string;
   readonly renewalValueUsd: number;
   readonly crmRecordId: string;
 }
@@ -27,6 +28,7 @@ export const customerMeetings: readonly CustomerMeeting[] = Object.freeze([
     eventId: 'acme-renewal',
     mailMessageId: 'mail-acme-renewal',
     recurrenceScope: 'THIS_EVENT',
+    renewalDeadline: '2026-07-24T23:59:59.000Z',
     renewalValueUsd: 1_250_000,
   },
   {
@@ -36,6 +38,7 @@ export const customerMeetings: readonly CustomerMeeting[] = Object.freeze([
     eventId: 'globex-renewal',
     mailMessageId: 'mail-globex-renewal',
     recurrenceScope: 'THIS_EVENT',
+    renewalDeadline: '2026-08-15T23:59:59.000Z',
     renewalValueUsd: 180_000,
   },
 ]);

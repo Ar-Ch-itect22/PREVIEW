@@ -3,6 +3,10 @@ const toast = document.querySelector('#toast');
 let state;
 let busy = false;
 let motionAction = null;
+let openPanel = null;
+let liveConfig = null;
+let liveResult = null;
+let liveBusy = false;
 
 const steps = [
   { label: 'Stage shadow run', short: 'Stage' },
@@ -122,6 +126,21 @@ function formatDate(value) {
   }).format(new Date(value))} UTC`;
 }
 
+function formatDay(value) {
+  return new Intl.DateTimeFormat('en', {
+    month: 'short', day: 'numeric', timeZone: 'UTC',
+  }).format(new Date(value));
+}
+
+function formatMoney(value) {
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(2).replace(/\.00$/u, '')}M`;
+  return `$${Math.round(value / 1_000)}K`;
+}
+
+function scenarioFor(customerName) {
+  return state.scenarioContext.find((context) => context.customerName === customerName);
+}
+
 function humanizeIsoTimestamps(value) {
   return String(value).replace(
     /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z/gu,
@@ -193,7 +212,7 @@ function renderRail() {
     <header class="rail-brand">
       <span class="brand-symbol"><span></span></span>
       <span class="brand-word">PREVIEW</span>
-      <span class="judge-chip">Judge Mode</span>
+      <span class="judge-chip">Guided Judge Mode</span>
     </header>
     <section class="rail-story">
       <p class="rail-eyebrow">${copy.eyebrow}</p>
@@ -225,10 +244,84 @@ function renderStageBar() {
       <span>${revision}</span>
     </div>
     <div class="stage-actions">
+      <button class="quiet-action stage-tool" data-panel="live">Live GPT-5.6</button>
+      <button class="quiet-action stage-tool" data-panel="evidence">What's running?</button>
       <span class="isolation-chip"><i></i> Isolated synthetic state</span>
       ${renderShellActions()}
     </div>
   </header>`;
+}
+
+function renderLiveEffect(effect) {
+  const riskClass = effect.risk.toLowerCase();
+  const diff = effect.system === 'Calendar'
+    ? `<div class="time-diff"><span class="diff-before">${formatDate(effect.before.start)}</span><b>&rarr;</b><span class="diff-after">${formatDate(effect.after.start)}</span></div>`
+    : `<div class="mail-diff"><div class="mail-recipient-line"><small>To</small><span class="mail-recipient">${escapeHtml(effect.after.recipients.join(', '))}</span><em class="external-chip">External</em></div><span><small>Message</small>&ldquo;${escapeHtml(humanizeIsoTimestamps(effect.after.textBody))}&rdquo;</span></div>`;
+  return `<article class="live-effect">
+    <span class="effect-icon">${systemGlyph(effect.system)}</span>
+    <div><strong>${escapeHtml(humanizeIsoTimestamps(effect.summary))}</strong><span>${escapeHtml(effect.system)} / ${escapeHtml(effect.operation)}</span></div>
+    ${diff}
+    <span class="risk-pill risk-${riskClass}"><i></i>${riskLabel(effect.risk)}</span>
+  </article>`;
+}
+
+function renderLiveSandbox() {
+  const available = liveConfig?.available;
+  const result = liveResult;
+  return `<div class="panel-backdrop" data-panel-backdrop>
+    <section class="product-panel live-panel" role="dialog" aria-modal="true" aria-labelledby="live-panel-title" data-panel-stop>
+      <header class="panel-head">
+        <div><p class="surface-kicker">Live orchestration proof</p><h3 id="live-panel-title">GPT-5.6 inside the staging boundary.</h3></div>
+        <button class="panel-close" data-panel="close" aria-label="Close">&times;</button>
+      </header>
+      <div class="authority-strip"><span><i></i>Stage-only tools</span><span>Calendar + Mail</span><span>0 provider writes</span><span>No approval or commit tools</span></div>
+      ${result ? `<div class="live-result">
+        <section class="live-result-proof">
+          <div><span>Model</span><strong>${escapeHtml(result.model)}</strong></div>
+          <div><span>Strict tool calls</span><strong>${result.toolTrace.length}</strong></div>
+          <div><span>Sealed effects</span><strong>${result.effectCount}</strong></div>
+          <div><span>Provider writes</span><strong class="safe">${result.providerMutationCount}</strong></div>
+        </section>
+        <section class="live-intent"><small>Your instruction</small><p>${escapeHtml(result.instruction)}</p></section>
+        <section class="live-effects">${result.effects.map(renderLiveEffect).join('')}</section>
+        <section class="live-trace"><div><small>GPT-5.6 tool trace</small><span>${result.toolTrace.map((entry) => `<code>${escapeHtml(entry.name)}</code>`).join('<b>&rarr;</b>')}</span></div><div><small>Sealed graph</small><code title="${escapeHtml(result.graphDigest)}">${shortDigest(result.graphDigest)}</code></div></section>
+        <p class="live-output">${escapeHtml(result.modelOutput || 'The dependent preview is ready for human inspection.')}</p>
+        <button class="button button-quiet" data-live-reset>Run another instruction</button>
+      </div>` : `<form class="live-form" id="live-sandbox-form">
+        <label for="live-intent">Instruction to the agent</label>
+        <textarea id="live-intent" name="intent" maxlength="1200" ${liveBusy ? 'disabled' : ''}>${escapeHtml(liveConfig?.sampleIntent ?? 'Move event-1 to Jul 27, 10:00 AM–10:30 AM UTC and stage an attendee message as message-1 to attendee@example.test.')}</textarea>
+        <div class="sandbox-world"><div><span class="node-icon">${systemGlyph('Calendar')}</span><p><strong>event-1</strong><small>Synthetic planning session · Jul 20, 10:00 AM UTC</small></p></div><div><span class="node-icon">${systemGlyph('Mail')}</span><p><strong>Reference Mail</strong><small>Isolated empty outbox</small></p></div></div>
+        ${available === false ? '<p class="panel-warning">The UI is ready, but this server was started without OPENAI_API_KEY. Restart it with the local environment loaded to make the live call.</p>' : ''}
+        <button class="button button-preview button-large" type="submit" ${liveBusy || available === false ? 'disabled' : ''}>${liveBusy ? 'GPT-5.6 is staging effects...' : 'Run live shadow simulation'} <b>&rarr;</b></button>
+        <p class="form-footnote">The API key stays server-side. GPT receives only four strict read/stage tools; PREVIEW deterministically seals the resulting effect graph.</p>
+      </form>`}
+    </section>
+  </div>`;
+}
+
+function renderEvidencePanel() {
+  const runtimeRows = [
+    ['Judge Mode', 'Real PREVIEW kernel and worker over isolated synthetic Calendar, Mail, and CRM providers.'],
+    ['Live Sandbox', 'Real GPT-5.6 Responses API orchestration with four strict stage-only tools.'],
+    ['Human boundary', 'Content-bound approval over the exact immutable graph; replay invalidates the prior path.'],
+    ['Commit path', 'Deterministic adapters, complete read-set drift check, durable journal, verification, and honest residual reporting.'],
+  ];
+  return `<div class="panel-backdrop" data-panel-backdrop>
+    <section class="product-panel evidence-panel" role="dialog" aria-modal="true" aria-labelledby="evidence-panel-title" data-panel-stop>
+      <header class="panel-head"><div><p class="surface-kicker">Implementation evidence</p><h3 id="evidence-panel-title">What is actually running?</h3></div><button class="panel-close" data-panel="close" aria-label="Close">&times;</button></header>
+      <div class="evidence-grid">
+        <section><p class="panel-section-label">This product surface</p>${runtimeRows.map(([title, body]) => `<article class="evidence-row"><i></i><div><strong>${title}</strong><span>${body}</span></div></article>`).join('')}</section>
+        <section class="certification-card"><p class="panel-section-label">Credentialed Google certification</p><h4>COMMITTED_VERIFIED</h4><span>Separate controlled Gate 7 run — not active in Guided Judge Mode.</span><div class="certification-effects"><p><i>&#10003;</i><strong>Google Calendar move</strong><span>Verified · 1 attempt</span></p><p><i>&#10003;</i><strong>Gmail draft</strong><span>Verified · 1 attempt</span></p><p><i>&#10003;</i><strong>Gmail send</strong><span>Verified · 1 attempt</span></p></div><footer><span><strong>0</strong> residuals</span><span><strong>0</strong> unresolved</span></footer></section>
+      </div>
+      <div class="truth-note"><strong>Honest boundary</strong><span>PREVIEW does not claim universal undo, global atomicity, or exactly-once delivery where a provider does not guarantee it.</span></div>
+    </section>
+  </div>`;
+}
+
+function renderPanel() {
+  if (openPanel === 'live') return renderLiveSandbox();
+  if (openPanel === 'evidence') return renderEvidencePanel();
+  return '';
 }
 
 function renderStageIntro() {
@@ -266,7 +359,7 @@ function renderEmptyGraph() {
     <button class="button button-preview button-large" data-action="stage" ${busy ? 'disabled' : ''}>
       <span>${busy ? 'Building effect graph...' : 'Run shadow simulation'}</span><b>&rarr;</b>
     </button>
-    <div class="empty-foot"><span>3 sandbox adapters</span><span>Deterministic Judge Mode</span><span>0 real writes</span></div>
+    <div class="empty-foot"><span>Real PREVIEW runtime</span><span>Isolated synthetic providers</span><span>0 real writes</span></div>
   </section>`;
 }
 
@@ -283,10 +376,13 @@ function renderGraphNode(effect, index) {
 function renderGraphLane(customerName, effects) {
   const acme = customerName === 'Acme';
   const sorted = sortEffects(effects);
+  const context = scenarioFor(customerName);
+  const value = context ? formatMoney(context.renewalValueUsd) : '';
+  const deadline = context ? formatDay(context.renewalDeadline) : '';
   return `<section class="graph-lane ${acme ? 'landmine' : ''}">
     <header class="lane-head">
       <div><span class="lane-dot"></span><strong>${escapeHtml(customerName)} renewal</strong></div>
-      <span>${acme ? '$1.25M at risk' : '$180K renewal'}</span>
+      <span>${escapeHtml(value)} contract &middot; deadline ${escapeHtml(deadline)}</span>
     </header>
     <div class="node-chain">${sorted.map(renderGraphNode).join('')}</div>
   </section>`;
@@ -339,10 +435,13 @@ function renderGroups() {
   const groups = groupEffects(state.effects);
   return Object.entries(groups).map(([customerName, effects]) => {
     const acme = customerName === 'Acme';
+    const context = scenarioFor(customerName);
+    const value = context ? formatMoney(context.renewalValueUsd) : '';
+    const deadline = context ? formatDay(context.renewalDeadline) : '';
     return `<article class="effect-group ${acme ? 'risky' : ''}">
       <header class="effect-group-head">
         <div><span class="customer-marker"></span><strong>${escapeHtml(customerName)} renewal</strong><span>${effects.length} linked effects</span></div>
-        <span class="customer-value">${acme ? '$1.25M renewal' : '$180K renewal'}</span>
+        <span class="customer-value">${escapeHtml(value)} contract &middot; deadline ${escapeHtml(deadline)}</span>
       </header>
       <div>${sortEffects(effects).map(renderEffect).join('')}</div>
     </article>`;
@@ -351,10 +450,14 @@ function renderGroups() {
 
 function renderAlert() {
   if (state.phase !== 'REVIEW') return '';
-  return `<section class="blast-alert">
+  const acmeCalendar = state.effects.find((effect) => effect.customerName === 'Acme' && effect.system === 'Calendar');
+  const acme = scenarioFor('Acme');
+  const movedTo = acmeCalendar ? formatDate(acmeCalendar.after.start) : 'the following week';
+  const deadline = acme ? formatDay(acme.renewalDeadline) : 'the renewal deadline';
+  const recipient = acme?.attendeeRecipients[0] ?? 'an external attendee';
+  return `<section class="blast-alert facts-only">
     <div class="alert-mark">!</div>
-    <div><p>Hidden blast radius surfaced</p><h3>The agent will move Acme's renewal, email an external attendee, and shift the CRM follow-up.</h3><span>PREVIEW does not guess whether this is wrong. It makes the consequence visible while you can still change it.</span></div>
-    <button class="button button-preview" data-action="protect-acme" ${busy ? 'disabled' : ''}>${busy ? 'Replaying...' : 'Protect Acme and replay'} <b>&rarr;</b></button>
+    <div><p>Hidden consequence surfaced</p><h3>Acme moves to ${escapeHtml(movedTo)} — after its ${escapeHtml(deadline)} renewal deadline — and notifies ${escapeHtml(recipient)} externally.</h3><span>Contract value is ${escapeHtml(formatMoney(acme?.renewalValueUsd ?? 0))}. PREVIEW exposes the facts; you decide whether the branch should proceed.</span></div>
   </section>`;
 }
 
@@ -463,10 +566,10 @@ function renderAbortState() {
 
 function renderActionBox() {
   if (state.phase === 'REVIEW') {
-    return `<div class="decision-box warning-decision"><p>Human decision</p><h4>One branch needs judgment.</h4><span>Protect Acme in the graph, or bind approval to all six staged effects.</span><button class="button button-quiet full" data-action="approve" ${busy ? 'disabled' : ''}>Approve all 6 effects</button></div>`;
+    return `<div class="decision-box warning-decision"><p>Human decision</p><h4>Choose what crosses the boundary.</h4><span>Acme moves after its deadline. PREVIEW shows the consequence; only you decide.</span><div class="decision-actions"><button class="button button-preview full" data-action="protect-acme" ${busy ? 'disabled' : ''}>${busy ? 'Replaying...' : 'Protect Acme and replay'} <b>&rarr;</b></button><button class="button button-quiet full" data-action="approve" ${busy ? 'disabled' : ''}>Approve exact 6-effect graph</button><button class="decision-abort" data-action="abort" ${busy ? 'disabled' : ''}>Abort transaction &middot; 0 writes</button></div></div>`;
   }
   if (state.phase === 'REPLAYED') {
-    return `<div class="decision-box"><p>Approval boundary</p><h4>Revision 02 is ready.</h4><span>Bind your approval to this exact graph, snapshot, policy, adapter set, and effect order.</span><button class="button button-preview full" data-action="approve" ${busy ? 'disabled' : ''}>Bind approval to Revision 02</button></div>`;
+    return `<div class="decision-box"><p>Approval boundary</p><h4>Revision 02 is ready.</h4><span>Bind your approval to this exact graph, snapshot, policy, adapter set, and effect order.</span><div class="decision-actions"><button class="button button-preview full" data-action="approve" ${busy ? 'disabled' : ''}>Bind approval to Revision 02</button><button class="decision-abort" data-action="abort" ${busy ? 'disabled' : ''}>Abort transaction &middot; 0 writes</button></div></div>`;
   }
   if (state.phase === 'APPROVED') {
     return `<div class="decision-box approved-decision"><p>Human approval bound</p><h4>Ready to cross into reality.</h4><span>The worker revalidates drift before its first mutation, then commits in safe dependency order.</span><button class="button button-primary full" data-action="commit" ${busy ? 'disabled' : ''}>${busy ? 'Committing and verifying...' : 'Commit approved graph'} <b>&rarr;</b></button></div>`;
@@ -533,13 +636,63 @@ function render() {
         </div>
       </main>
     </div>
+    ${renderPanel()}
   </div>`;
 }
 
 document.addEventListener('click', (event) => {
+  if (event.target.matches('[data-panel-backdrop]')) {
+    openPanel = null;
+    render();
+    return;
+  }
+  const panelButton = event.target.closest('[data-panel]');
+  if (panelButton) {
+    const panel = panelButton.dataset.panel;
+    openPanel = panel === 'close' ? null : panel;
+    if (openPanel === 'live' && liveConfig === null) {
+      void request('/api/live-sandbox').then((payload) => { liveConfig = payload; render(); }).catch((error) => showToast(error.message));
+    }
+    render();
+    return;
+  }
+  if (event.target.closest('[data-live-reset]')) {
+    liveResult = null;
+    render();
+    return;
+  }
   const button = event.target.closest('[data-action]');
   if (!button) return;
   void act(button.dataset.action);
+});
+
+document.addEventListener('submit', (event) => {
+  if (event.target.id !== 'live-sandbox-form') return;
+  event.preventDefault();
+  if (liveBusy) return;
+  const form = new FormData(event.target);
+  const intent = String(form.get('intent') ?? '');
+  liveBusy = true;
+  render();
+  void request('/api/live-sandbox/run', {
+    body: JSON.stringify({ intent }),
+    headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
+  }).then((payload) => {
+    liveResult = payload;
+  }).catch((error) => {
+    showToast(error.message);
+  }).finally(() => {
+    liveBusy = false;
+    render();
+  });
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && openPanel !== null) {
+    openPanel = null;
+    render();
+  }
 });
 
 request('/api/session')

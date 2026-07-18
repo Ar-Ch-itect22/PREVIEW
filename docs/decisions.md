@@ -225,3 +225,14 @@ Decisions are recorded when made and are never backdated.
 - Context: stacking a green receipt above the pre-commit graph made the committed state feel like a differently themed review screen and weakened the final reveal.
 - Decision: replace the committed review composition with a dedicated topology that places PREVIEW at the commit boundary, draws verified paths only to the Calendar, Mail, and CRM adapters exercised by the receipt, and draws separate dotted paths to explicitly labelled future Files, Payments, and Messaging surfaces. Keep receipt counts, effect evidence, and approval bindings beside the topology in the same continuous glass system.
 - Consequence: the terminal state now communicates both verified proof and horizontal product ambition without implying that future adapters are currently supported or that the transaction has universal undo semantics.
+## 2026-07-19 — Separate deterministic Judge Mode from visible live orchestration
+
+- Decision: keep Guided Judge Mode deterministic over isolated synthetic providers, and expose GPT-5.6 through a separate Live Sandbox surface using the existing strict Calendar/Mail stage-only tool loop.
+- Reason: the guided flow remains safe and repeatable for judging, while the product now demonstrates a real model call without implying that GPT can approve, commit, or mutate a provider.
+- Consequence: the Live Sandbox API keeps `OPENAI_API_KEY` server-side, rejects concurrent runs, caps instruction size, verifies provider snapshots remain unchanged, and returns only the sealed effect graph and tool trace. No commit endpoint is connected to the model-facing controller.
+
+## 2026-07-19 — Present customer risk as facts, not model judgment
+
+- Decision: add renewal deadlines and contract values to the customer-operations fixture and present the exact moved date, deadline relationship, and external recipient.
+- Reason: `$1.25M at risk` asserted an unsupported business outcome. PREVIEW is a consequence-visibility layer; the human decides whether the factual consequence is acceptable.
+- Consequence: renewal-specific context remains inside the customer-operations demo and console presentation. Core packages remain provider- and domain-neutral.

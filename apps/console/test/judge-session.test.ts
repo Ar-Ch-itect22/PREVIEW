@@ -13,6 +13,18 @@ describe('Gate 8 Judge Mode', () => {
     expect(view.phase).toBe('REVIEW');
     expect(view.effectCount).toBe(6);
     expect(view.effects.filter(({ risk }) => risk === 'IRREVERSIBLE')).toHaveLength(2);
+    expect(view.scenarioContext).toEqual([
+      expect.objectContaining({
+        customerName: 'Acme',
+        renewalDeadline: '2026-07-24T23:59:59.000Z',
+        renewalValueUsd: 1_250_000,
+      }),
+      expect.objectContaining({
+        customerName: 'Globex',
+        renewalDeadline: '2026-08-15T23:59:59.000Z',
+        renewalValueUsd: 180_000,
+      }),
+    ]);
     expect(view.providerState).toEqual({
       calendarMutations: 0,
       crmMutations: 0,

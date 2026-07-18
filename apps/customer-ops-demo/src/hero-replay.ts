@@ -105,6 +105,7 @@ export async function runCustomerOpsSimulation(
         subject: `${observed.title} moved`,
         textBody: {
           field: 'start',
+          format: 'UTC_HUMAN',
           prefix: `The ${observed.title} has moved to `,
           resourceKey: calendarResourceKey,
           suffix: '.',

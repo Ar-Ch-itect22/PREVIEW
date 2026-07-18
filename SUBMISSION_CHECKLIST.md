@@ -3,11 +3,11 @@
 - [x] Gate 0 contract and skeleton verified
 - [x] Gate 1 Reference Calendar kernel proof verified
 - [x] Gate 2 cross-adapter shadow execution verified
-- [ ] Kernel and reference adapters verified
-- [ ] Real GPT-5.6 staged session verified
-- [ ] Hero replay verified repeatedly
-- [ ] Approval, drift, tamper, and recovery verified
-- [ ] Real certified adapter paths verified
+- [x] Kernel and reference adapters verified
+- [x] Real GPT-5.6 staged session verified
+- [x] Hero replay verified repeatedly
+- [x] Approval, drift, tamper, and recovery verified
+- [x] Real certified adapter paths verified
 - [ ] Judge Mode works in incognito without credentials
 - [ ] Full test, build, conformance, fault-injection, Playwright, secret, and license checks pass
 - [ ] Fresh-clone setup passes

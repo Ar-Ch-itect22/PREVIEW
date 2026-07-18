@@ -50,7 +50,7 @@ describe('Gate 4 Customer Ops replay', () => {
       resourceKey: 'reference-crm:record:crm-acme-renewal',
     });
     expect(sendMessageEffectSchema.parse(acmeMail).payload.textBody).toBe(
-      'The Acme renewal has moved to 2026-07-27T10:00:00.000Z.',
+      'The Acme renewal has moved to Jul 27, 10:00 AM UTC.',
     );
 
     const authority = new ContentBoundApprovalAuthority('gate-four-signing-key');
@@ -121,7 +121,7 @@ describe('Gate 4 Customer Ops replay', () => {
     expect(revisionTwoResources).not.toContain('reference-mail:message:mail-acme-renewal');
     expect(revisionTwoResources).not.toContain('reference-crm:record:crm-acme-renewal');
     expect(mailBodies).toEqual([
-      'The Globex renewal has moved to 2026-07-28T14:00:00.000Z.',
+      'The Globex renewal has moved to Jul 28, 2:00 PM UTC.',
     ]);
     expect(revisionTwo.revision.graphDigest).toMatch(/^sha256:[a-f0-9]{64}$/u);
     expect(revisionTwo.revision.graphDigest).not.toBe(revisionOne.revision.graphDigest);

@@ -197,3 +197,31 @@ Decisions are recorded when made and are never backdated.
 - Context: Gmail accepted an exact-message send and returned its provider message ID, but an immediate `rfc822msgid` search did not yet expose the new message. Treating that indexing delay as a content mismatch produced a truthful residual receipt, but it could not certify the otherwise known successful write.
 - Decision: after a successful Gmail API response, verify the exact controlled MIME by reading the returned provider draft/message ID directly. Reserve Message-ID search for reconciliation when a mutation response is ambiguous and no trustworthy provider ID is available.
 - Consequence: normal verification is independent of Gmail search-index lag, while ambiguous irreversible sends still remain `UNKNOWN` on empty, duplicate, or mismatched search results and are never blindly retried.
+
+## 2026-07-18 — Make Judge Mode a real runtime composition
+
+- Status: accepted
+- Context: a polished but disconnected dashboard would make the core safety claim unverifiable, while live credentials and model nondeterminism would weaken a three-minute judge path.
+- Decision: compose the existing Customer Ops simulation, replay coordinator, approval authority, durable saga, and reference provider adapters behind a credential-free local human control plane. The static presentation consumes the exact deterministic effect data, digests, journal, provider counters, and receipt; it does not reconstruct transaction semantics in the browser.
+- Consequence: every Judge Mode button exercises the real mechanism. Stage, replay, and abort produce zero provider writes; replay invalidates the old approval path; approve and commit remain separate human-only operations; and the terminal UI is backed by the worker's actual verified receipt.
+
+## 2026-07-18 — Keep the submission demo deterministic and claims explicit
+
+- Status: accepted
+- Context: the live GPT-5.6 orchestration proof is important evidence, but variable tool choices, API availability, and credentials are unnecessary failure modes for the recorded hero demonstration.
+- Decision: label the UI path “deterministic Judge Mode,” use fixed synthetic fixtures, and keep the live GPT-5.6 proof as separately tested Gate 3 evidence. Render the raw deterministic consequence diff as primary evidence and avoid claiming live model judgment in the credential-free path.
+- Consequence: judges can replay the same disaster/correction/commit story reliably without OAuth or API billing, while the repository still contains and verifies the strict GPT-5.6 tool loop used by PREVIEW.
+
+## 2026-07-18 - Make the staging boundary the visual architecture
+
+- Status: accepted
+- Context: the first Judge Mode interface exposed the real mechanism but read as a conventional dark administration dashboard. PREVIEW needs the simulation-to-reality boundary, replay, and receipt to be understandable in a three-minute demonstration without sacrificing exact operational evidence.
+- Decision: use one coherent Dimension-inspired atmospheric glass environment across both the narrative rail and transaction stage, with an original causal graph informed only behaviorally by n8n's workflow readability. Resend contributes precision and status discipline as principles, not a visibly separate black design language. Evidence, approval controls, digests, and receipts use stronger translucent surfaces and hairline boundaries within the same continuous blue-to-warm environment. Semantic colors are reserved for staged activity and deterministic risk or verification state.
+- Consequence: the interface makes shadow state spatially distinct from reality, turns structured replay into a visible branch-removal moment, and preserves the raw deterministic diff and human commit boundary. PREVIEW does not copy any reference product's layout, palette, assets, or brand identity.
+
+## 2026-07-18 - Give the verified state its own transaction topology
+
+- Status: accepted
+- Context: stacking a green receipt above the pre-commit graph made the committed state feel like a differently themed review screen and weakened the final reveal.
+- Decision: replace the committed review composition with a dedicated topology that places PREVIEW at the commit boundary, draws verified paths only to the Calendar, Mail, and CRM adapters exercised by the receipt, and draws separate dotted paths to explicitly labelled future Files, Payments, and Messaging surfaces. Keep receipt counts, effect evidence, and approval bindings beside the topology in the same continuous glass system.
+- Consequence: the terminal state now communicates both verified proof and horizontal product ambition without implying that future adapters are currently supported or that the transaction has universal undo semantics.

@@ -157,3 +157,50 @@ This log records actual collaboration only. It is not a substitute for Git histo
 - Google Calendar move, exact Gmail draft creation, and exact Gmail send each recorded one commit attempt and remote verification. No effect was retried or compensated.
 - The terminal receipt was `COMMITTED_VERIFIED`; all three effect statuses were `committed_verified`, `knownResidualCount` was `0`, and `unresolvedCount` was `0`.
 - This credential-backed result completes the Gate 7 Calendar/Gmail certification boundary. No broader Calendar/Gmail surface, HubSpot access, GPT commit capability, UI work, or out-of-scope repository is included in this milestone.
+
+## 2026-07-18 — Gate 8 Product UX and Judge Mode
+
+- Aru asked Codex to start Gate 8 after completing the real Google adapter gate and emphasized that the product interface must be visually strong.
+- Codex audited the repository, confirmed that the presentation package contained no implementation, and defined the judge flow against the existing immutable runtime rather than creating a disconnected UI mock.
+- Codex implemented a credential-free Judge Mode server and product interface. The server composes the real six-effect Customer Ops simulation, structured Acme protection replay, approval authority, durable risk-aware saga, reference commit adapters, journal, provider counters, and receipt.
+- The browser receives deterministic presentation data only. Approval and commit are separate POST actions on the human control plane and are never agent tools. The browser does not own effect semantics, risk, ordering, verification, reconciliation, or compensation.
+- The UI explicitly labels its synthetic deterministic mode, shows zero provider writes during simulation and replay, exposes the invalidated and active graph digests, and renders the actual terminal receipt after commit.
+- No local credential, ignored `.env` value, live model call, real provider, external message, or out-of-scope repository was used for Gate 8.
+
+### Focused verified results
+
+- Five Judge Mode tests passed for zero-write six-effect staging, full causal-group replay, Revision 2 approval binding, verified durable commit, fail-closed commit without approval, and byte-identical abort.
+- An end-to-end local HTTP exercise passed through READY → REVIEW → REPLAYED → APPROVED → COMMITTED: 6 staged effects and 0 writes became 3 replayed effects and 0 writes, approval matched the active digest, and commit returned `COMMITTED_VERIFIED` with 3 provider writes, 0 residuals, and 0 unresolved outcomes.
+- A clean temporary copy outside OneDrive installed the frozen lockfile with dependency safety policies intact, then `pnpm check` passed: ESLint with zero warnings, 17 production builds, strict package typechecks, and 92 tests across 21 files. Package test execution is serialized to avoid Windows/OneDrive locking a shared Vitest module; test-file behavior is unchanged.
+
+## 2026-07-18 - Gate 8 visual-system redesign
+
+- Aru supplied extended design guidance, CSS variables, design tokens, and screenshots for Dimension, Resend, n8n, and Twingate, then explicitly locked the visual exploration after reviewing the proposed synthesis.
+- Codex's first reference synthesis made the Dimension rail and black Resend-style transaction surface feel like separate products. Aru rejected that visible split. Codex removed Resend as a visible style, unified the full interface under one continuous Dimension-inspired blue-to-warm glass environment, and retained only its precision/status discipline as a nonvisual principle. The causal graph still makes cross-system replay visible without inheriting n8n's branding.
+- Codex replaced the generic dashboard composition with a responsive Judge Mode experience covering ready, review, replayed, approved, committed, and aborted states. The UI remains a consumer of the existing deterministic session and does not acquire effect, risk, commit, verification, reconciliation, or compensation authority.
+- Codex exercised the live local browser through the entire hero path. Revision 1 showed six effects and zero writes; protecting Acme visibly removed its Calendar, Mail, and CRM branch; Revision 2 bound approval to the new digest; commit produced three verified provider writes and a zero-residual, zero-unresolved receipt. Browser console inspection reported no warnings or errors.
+- The 390px responsive breakpoint had no horizontal overflow. The 1280x720 opening frame keeps the primary simulation action visible, and every state transition resets to the top so the next reveal is camera-ready.
+
+### Verified results after the redesign
+
+- Judge Mode tests passed: 5 tests.
+- `pnpm check` passed: ESLint with zero warnings, all 17 production builds, strict package typechecks, and 92 tests across 21 files.
+
+## 2026-07-18 - Committed-state finale revision
+
+- Aru identified that the terminal verified screen broke visual continuity and asked for a workflow-like structure that also communicates PREVIEW's future app surface.
+- Codex replaced the stacked review graph and receipt with a dedicated committed-state transaction topology. Solid paths represent only the Calendar, Mail, and CRM effects verified in the current receipt; dotted nodes describe Drive/Dropbox, Stripe/Razorpay, and Slack/Teams as future adapter surfaces.
+- The actual receipt remains visible beside the topology with 3/3 verification, zero residuals, zero unresolved outcomes, per-adapter evidence, graph and approval digests, and the deterministic rerun control.
+
+## 2026-07-18 - Judge Mode demo-motion pass
+
+- Aru locked the visual system and requested motion only for three truthful runtime transitions: replay, commit verification, and provider-write progression.
+- Codex preserved the existing layout and styling. Replay now visibly removes the Acme Calendar, Mail, and CRM branch in dependency order, rolls the sealed-effect count from six to three, and reveals the newly active graph digest after the prior digest is invalidated.
+- Commit now reveals Calendar, Mail, and CRM verification sequentially, advances the provider-write counter in the same rhythm, then introduces the durable receipt and verified-effects badge only after the adapter sequence completes.
+- The motion layer does not invent intermediate runtime states or move authority into the browser; it presents the already-returned deterministic state using transform and opacity animations, with a reduced-motion fallback.
+
+## 2026-07-18 - Locked-design presentation polish
+
+- Aru identified a clipped reset control in the committed receipt while explicitly keeping the existing visual system locked.
+- Codex corrected the reset control's width specificity so it maintains equal insets inside the receipt.
+- The focused console suite passed all five tests and its production build passed. Live layout inspection confirmed equal reset-button insets and no horizontal overflow.

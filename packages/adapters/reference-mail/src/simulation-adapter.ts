@@ -45,7 +45,10 @@ implements SimulationAdapter<MailMessage, StageMailInput, MailMessageDiff> {
       throw new Error('Mail body source must be exactly one runtime-owned staged dependency');
     }
     const source = z.record(z.string(), z.unknown()).parse(dependency.resource);
-    const sourceValue = z.string().parse(source[input.textBody.field]);
+    const sourceValue = formatSourceValue(
+      z.string().parse(source[input.textBody.field]),
+      input.textBody.format,
+    );
     const payload = sendMessagePayloadSchema.parse({
       messageId: input.messageId,
       recipients: input.recipients,
@@ -105,4 +108,18 @@ implements SimulationAdapter<MailMessage, StageMailInput, MailMessageDiff> {
   #resourceKey(messageId: string): string {
     return `${this.adapterId}:message:${messageId}`;
   }
+}
+
+function formatSourceValue(value: string, format: 'RAW' | 'UTC_HUMAN' | undefined): string {
+  if (format !== 'UTC_HUMAN') return value;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) throw new TypeError('UTC_HUMAN mail source must be an ISO timestamp');
+  return `${new Intl.DateTimeFormat('en-US', {
+    day: 'numeric',
+    hour: 'numeric',
+    hour12: true,
+    minute: '2-digit',
+    month: 'short',
+    timeZone: 'UTC',
+  }).format(date)} UTC`;
 }

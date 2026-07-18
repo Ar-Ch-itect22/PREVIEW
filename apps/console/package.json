@@ -1,0 +1,27 @@
+{
+  "name": "@preview/console",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "pnpm build && node --watch dist/server.js",
+    "start": "node dist/server.js",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@preview/approval": "workspace:*",
+    "@preview/customer-ops-demo": "workspace:*",
+    "@preview/domain": "workspace:*",
+    "@preview/persistence": "workspace:*",
+    "@preview/reference-calendar": "workspace:*",
+    "@preview/reference-crm": "workspace:*",
+    "@preview/reference-mail": "workspace:*",
+    "@preview/worker": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

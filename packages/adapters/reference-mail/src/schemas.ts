@@ -22,6 +22,7 @@ export const stageMailInputSchema = z.object({
   subject: z.string().min(1),
   textBody: z.object({
     field: z.string().min(1),
+    format: z.enum(['RAW', 'UTC_HUMAN']).optional(),
     prefix: z.string(),
     resourceKey: z.string().min(1),
     suffix: z.string(),

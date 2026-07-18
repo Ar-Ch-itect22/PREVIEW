@@ -20,7 +20,9 @@
     "test:gate7": "pnpm build && pnpm --filter @preview/google-common test && pnpm --filter @preview/google-calendar test && pnpm --filter @preview/gmail test",
     "test:gate7:live:prepare": "pnpm build && node --env-file=.env apps/google-workspace-certification/dist/prepare.js",
     "test:gate7:live:execute": "pnpm build && node --env-file=.env apps/google-workspace-certification/dist/execute.js",
-    "test:packages": "pnpm -r --if-present test",
+    "test:gate8": "pnpm build && pnpm --filter @preview/console test",
+    "dev:judge": "pnpm --filter @preview/console dev",
+    "test:packages": "pnpm --workspace-concurrency=1 -r --if-present test",
     "test:unit": "pnpm build && pnpm --filter @preview/domain test",
     "typecheck": "pnpm build && pnpm typecheck:packages",
     "typecheck:packages": "pnpm -r --if-present typecheck"

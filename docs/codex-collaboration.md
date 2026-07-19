@@ -217,3 +217,10 @@ This log records actual collaboration only. It is not a substitute for Git histo
 - The focused console suite passed 6 tests, including the new Live Sandbox provider-integrity proof. Customer Operations passed 18 tests and the OpenAI orchestration package passed 7 tests using Vitest's runner config loader to avoid the known Windows/OneDrive config-bundling failure.
 - A synthetic HTTP run passed READY → REVIEW with 6 effects → REPLAYED with 3 effects → APPROVED on Revision 02 → `COMMITTED_VERIFIED`, with 3 approved writes, 0 residuals, and 0 unresolved outcomes.
 - One live request through the new HTTP bridge used `gpt-5.6`, made 4 strict tool calls, sealed a Calendar → Mail graph with 2 effects, and returned 0 provider writes with both provider snapshots unchanged.
+
+## 2026-07-19 - Live sandbox discoverability and consequence handoff
+
+- Aruvansh asked for two tightly scoped changes while explicitly locking all other typography, spacing, layout, and visual language.
+- Codex promoted only the top-bar Live Sandbox trigger into a compact `Try Live GPT-5.6` status pill and left the existing Guided Judge Mode surfaces unchanged.
+- A successful live run now offers `Open in PREVIEW`, which carries the exact sealed Calendar and Mail graph into a dedicated read-only consequence review. The view shows the GPT-5.6 tool trace, graph binding, external recipient, risk classes, and zero provider writes; approval and commit remain unavailable to the model-facing path.
+- ESLint, the console production build, strict console typecheck, and all 6 focused console tests passed. A browser verification completed a real GPT-5.6 run with 4 strict tool calls, 2 sealed effects, and 0 provider writes, then returned cleanly to the untouched Guided Judge Mode.

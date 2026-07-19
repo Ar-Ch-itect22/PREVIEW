@@ -406,6 +406,29 @@ button:focus-visible { outline: 2px solid var(--preview); outline-offset: 3px; }
 .quiet-action:hover { color: var(--white); background: var(--surface-soft); }
 .quiet-action.danger-text:hover { color: var(--red); }
 
+.live-trigger {
+  gap: 7px;
+  min-height: 31px;
+  padding: 0 12px;
+  border: 1px solid rgba(146,129,247,.34);
+  border-radius: 999px;
+  color: #f6f3ff;
+  background: rgba(146,129,247,.09);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.07);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.live-trigger i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 10px rgba(58,211,137,.7);
+}
+
+.live-trigger:hover { border-color: rgba(172,160,255,.58); background: rgba(146,129,247,.15); }
+
 .stage-content {
   position: relative;
   z-index: 1;
@@ -1146,6 +1169,29 @@ button:focus-visible { outline: 2px solid var(--preview); outline-offset: 3px; }
 .live-trace code { color: #d8d2ff; font: 7px "Commit Mono", "SFMono-Regular", Consolas, monospace; }
 .live-trace b { color: var(--muted-deep); font-size: 8px; }
 .live-output { color: var(--muted); }
+.live-result-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+
+.live-bridge-banner {
+  display: grid;
+  grid-template-columns: 45px minmax(0,1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 18px;
+  border: 1px solid rgba(146,129,247,.24);
+  border-radius: 18px;
+  background: linear-gradient(110deg, rgba(83,136,228,.12), rgba(146,129,247,.13));
+}
+
+.live-bridge-banner p { margin: 0 0 5px; color: #b8afff; font-size: 8px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.live-bridge-banner strong { font-size: 13px; font-weight: 600; }
+.live-zero-write { color: var(--green); font: 9px "Commit Mono", "SFMono-Regular", Consolas, monospace; }
+.live-review-ledger .live-effects { margin: 15px 18px 18px; }
+.live-review-trace { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; padding: 18px; }
+.live-review-trace > div { min-width: 0; }
+.live-review-trace span { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; color: var(--ash); font-size: 9px; line-height: 1.55; }
+.live-review-trace code { color: #d8d2ff; font: 8px "Commit Mono", "SFMono-Regular", Consolas, monospace; }
+.live-review-trace b { color: var(--muted-deep); font-size: 8px; }
+.live-review-inspector .inspector-section:last-child { border-bottom: 0; }
 
 .evidence-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 16px; padding: 24px 26px; }
 .evidence-grid > section:first-child { display: grid; align-content: start; gap: 8px; }
@@ -1250,6 +1296,9 @@ button:focus-visible { outline: 2px solid var(--preview); outline-offset: 3px; }
   .live-result-proof { grid-template-columns: repeat(2, 1fr); }
   .live-effect { grid-template-columns: 29px 1fr auto; }
   .live-effect > .time-diff, .live-effect > .mail-diff { grid-column: 2 / -1; }
+  .live-bridge-banner { grid-template-columns: 40px 1fr; }
+  .live-zero-write { grid-column: 2; }
+  .live-review-trace { grid-template-columns: 1fr; }
   .evidence-grid { grid-template-columns: 1fr; padding-inline: 16px; }
   .effect-diff { grid-column: 2 / -1; }
   .inspector { grid-template-columns: 1fr; }

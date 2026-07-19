@@ -236,3 +236,10 @@ Decisions are recorded when made and are never backdated.
 - Decision: add renewal deadlines and contract values to the customer-operations fixture and present the exact moved date, deadline relationship, and external recipient.
 - Reason: `$1.25M at risk` asserted an unsupported business outcome. PREVIEW is a consequence-visibility layer; the human decides whether the factual consequence is acceptable.
 - Consequence: renewal-specific context remains inside the customer-operations demo and console presentation. Core packages remain provider- and domain-neutral.
+
+## 2026-07-19 - Hand live orchestration into a read-only PREVIEW review
+
+- Status: accepted
+- Context: the Live Sandbox proved real GPT-5.6 tool orchestration, but leaving the sealed effects inside a modal made the model proof and the PREVIEW transaction surface feel disconnected.
+- Decision: add an explicit `Open in PREVIEW` handoff that renders the exact server-sealed Calendar and Mail effects in a full consequence-review surface. Keep the live path stage-only: it exposes neither human approval nor commit controls and continues to report zero provider writes.
+- Consequence: judges can follow one visible chain from GPT-5.6 tool calls to PREVIEW's deterministic consequence diff without weakening the repeatable Guided Judge Mode or implying that the model owns commit authority.

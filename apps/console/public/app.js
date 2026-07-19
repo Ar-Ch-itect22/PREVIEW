@@ -7,6 +7,7 @@ let openPanel = null;
 let liveConfig = null;
 let liveResult = null;
 let liveBusy = false;
+let liveReviewOpen = false;
 
 const steps = [
   { label: 'Stage shadow run', short: 'Stage' },
@@ -235,19 +236,24 @@ function renderRail() {
 }
 
 function renderStageBar() {
-  const revision = state.revisionNumber ? `Revision 0${state.revisionNumber}` : 'No revision';
+  const revision = liveReviewOpen
+    ? 'Sealed live graph'
+    : state.revisionNumber
+      ? `Revision 0${state.revisionNumber}`
+      : 'No revision';
+  const context = liveReviewOpen ? 'Live GPT-5.6 sandbox' : 'Customer operations';
   return `<header class="stage-bar">
     <div class="stage-context">
       <span class="context-dot"></span>
-      <span>Customer operations</span>
+      <span>${context}</span>
       <span class="context-divider"></span>
       <span>${revision}</span>
     </div>
     <div class="stage-actions">
-      <button class="quiet-action stage-tool" data-panel="live">Live GPT-5.6</button>
+      <button class="quiet-action stage-tool live-trigger" data-panel="live"><i></i><span>Try Live GPT-5.6</span></button>
       <button class="quiet-action stage-tool" data-panel="evidence">What's running?</button>
       <span class="isolation-chip"><i></i> Isolated synthetic state</span>
-      ${renderShellActions()}
+      ${liveReviewOpen ? '<button class="quiet-action" data-live-exit>Return to guided demo</button>' : renderShellActions()}
     </div>
   </header>`;
 }
@@ -286,7 +292,7 @@ function renderLiveSandbox() {
         <section class="live-effects">${result.effects.map(renderLiveEffect).join('')}</section>
         <section class="live-trace"><div><small>GPT-5.6 tool trace</small><span>${result.toolTrace.map((entry) => `<code>${escapeHtml(entry.name)}</code>`).join('<b>&rarr;</b>')}</span></div><div><small>Sealed graph</small><code title="${escapeHtml(result.graphDigest)}">${shortDigest(result.graphDigest)}</code></div></section>
         <p class="live-output">${escapeHtml(result.modelOutput || 'The dependent preview is ready for human inspection.')}</p>
-        <button class="button button-quiet" data-live-reset>Run another instruction</button>
+        <div class="live-result-actions"><button class="button button-preview" data-live-open-preview>Open in PREVIEW <b>&rarr;</b></button><button class="button button-quiet" data-live-reset>Run another instruction</button></div>
       </div>` : `<form class="live-form" id="live-sandbox-form">
         <label for="live-intent">Instruction to the agent</label>
         <textarea id="live-intent" name="intent" maxlength="1200" ${liveBusy ? 'disabled' : ''}>${escapeHtml(liveConfig?.sampleIntent ?? 'Move event-1 to Jul 27, 10:00 AM–10:30 AM UTC and stage an attendee message as message-1 to attendee@example.test.')}</textarea>
@@ -622,17 +628,105 @@ function renderRuntime() {
   </div>`;
 }
 
+function renderLiveReviewRail() {
+  return `<aside class="narrative-rail">
+    <div class="rail-grain"></div>
+    <header class="rail-brand">
+      <span class="brand-symbol"><span></span></span>
+      <span class="brand-word">PREVIEW</span>
+      <span class="judge-chip">Live review</span>
+    </header>
+    <section class="rail-story">
+      <p class="rail-eyebrow">Live GPT-5.6 / consequence review</p>
+      <h1>Live effects, inside PREVIEW.</h1>
+      <p class="rail-copy">GPT-5.6 proposed the actions. PREVIEW sealed the exact graph and kept every provider untouched.</p>
+    </section>
+    <section class="instruction-card">
+      <div class="instruction-head"><span class="agent-dot">AI</span><span>Live agent instruction</span></div>
+      <p>${escapeHtml(liveResult.instruction)}</p>
+    </section>
+    <nav class="journey" aria-label="Live transaction stages">
+      ${[
+        ['GPT-5.6 staged effects', 'Stage', 'done'],
+        ['PREVIEW sealed graph', 'Seal', 'done'],
+        ['Inspect consequences', 'Inspect', 'active'],
+        ['Human approval unavailable', 'Approve', ''],
+        ['Provider commit unavailable', 'Commit', ''],
+      ].map(([label, short, className], index) => `<div class="journey-step ${className}"><span class="journey-label">${label}</span><span class="journey-short">${short}</span><span class="journey-number">0${index + 1}</span></div>`).join('')}
+    </nav>
+    <footer class="rail-footer">
+      <div><strong class="safe">0</strong><span>provider writes</span></div>
+      <p>Live graph is staged only.</p>
+    </footer>
+  </aside>`;
+}
+
+function renderLiveReviewIntro() {
+  return `<section class="stage-intro">
+    <div>
+      <p class="section-kicker">Live transaction &middot; sealed revision</p>
+      <h2>A live effect graph, inside PREVIEW.</h2>
+    </div>
+    <div class="stage-proof">
+      <span class="proof-light safe"></span>
+      <div><strong>Shadow only</strong><span>GPT-5.6 has no approval or commit tools</span></div>
+    </div>
+  </section>`;
+}
+
+function renderLiveReviewRuntime() {
+  return `<div class="runtime-layout live-review-layout">
+    <div class="stage-stack">
+      <section class="live-bridge-banner">
+        <span class="replay-symbol">&#10003;</span>
+        <div><p>Live graph handed to PREVIEW</p><strong>Generated by GPT-5.6. Deterministically sealed before inspection.</strong></div>
+        <span class="live-zero-write">0 provider writes</span>
+      </section>
+      <section class="ledger surface live-review-ledger">
+        <header class="surface-header ledger-header">
+          <div><p class="surface-kicker">Cross-system consequence diff</p><h3>What GPT-5.6 proposes</h3></div>
+          <div class="ledger-count"><strong>${liveResult.effectCount}</strong><span>sealed effects</span></div>
+        </header>
+        <section class="live-effects">${liveResult.effects.map(renderLiveEffect).join('')}</section>
+      </section>
+      <section class="surface live-review-trace">
+        <div><p class="surface-kicker">GPT-5.6 tool trace</p><span>${liveResult.toolTrace.map((entry) => `<code>${escapeHtml(entry.name)}</code>`).join('<b>&rarr;</b>')}</span></div>
+        <div><p class="surface-kicker">Model output</p><span>${escapeHtml(liveResult.modelOutput || 'The dependent preview is ready for human inspection.')}</span></div>
+      </section>
+    </div>
+    <aside class="inspector surface live-review-inspector">
+      <section class="inspector-section">
+        <div class="inspector-head"><p>Runtime proof</p><span class="runtime-status safe">Shadow only</span></div>
+        <div class="proof-metrics">
+          <article><strong class="safe">0</strong><span>Provider writes</span></article>
+          <article><strong>${liveResult.effectCount}</strong><span>Sealed effects</span></article>
+          <article><strong>${liveResult.toolTrace.length}</strong><span>Strict tool calls</span></article>
+          <article><strong>5.6</strong><span>OpenAI model</span></article>
+        </div>
+      </section>
+      <section class="inspector-section bindings">
+        <p class="inspector-label">Cryptographic binding</p>
+        <div class="binding active-binding"><span>Sealed effect graph</span><code title="${escapeHtml(liveResult.graphDigest)}">${shortDigest(liveResult.graphDigest)}</code></div>
+        <div class="binding"><span>Provider state</span><code>Byte-identical</code></div>
+        <div class="binding"><span>Human approval</span><code>Not available to model</code></div>
+      </section>
+      <section class="inspector-section">
+        <div class="decision-box"><p>Human boundary</p><h4>Ready for inspection.</h4><span>This live path ends at the staging boundary. It cannot approve or commit.</span><div class="decision-actions"><button class="button button-preview full" data-panel="live">Back to live sandbox</button><button class="button button-quiet full" data-live-exit>Return to guided demo</button></div></div>
+      </section>
+    </aside>
+  </div>`;
+}
+
 function render() {
   if (!state) return;
   const motionClass = motionAction ? ` motion-${motionAction}` : '';
   app.innerHTML = `<div class="shell phase-${state.phase.toLowerCase()}${motionClass}">
     <div class="app-frame">
-      ${renderRail()}
+      ${liveReviewOpen && liveResult ? renderLiveReviewRail() : renderRail()}
       <main class="runtime-stage">
         ${renderStageBar()}
         <div class="stage-content">
-          ${renderStageIntro()}
-          ${renderRuntime()}
+          ${liveReviewOpen && liveResult ? `${renderLiveReviewIntro()}${renderLiveReviewRuntime()}` : `${renderStageIntro()}${renderRuntime()}`}
         </div>
       </main>
     </div>
@@ -659,6 +753,20 @@ document.addEventListener('click', (event) => {
   if (event.target.closest('[data-live-reset]')) {
     liveResult = null;
     render();
+    return;
+  }
+  if (event.target.closest('[data-live-open-preview]')) {
+    liveReviewOpen = true;
+    openPanel = null;
+    render();
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    return;
+  }
+  if (event.target.closest('[data-live-exit]')) {
+    liveReviewOpen = false;
+    openPanel = null;
+    render();
+    window.scrollTo({ top: 0, behavior: 'auto' });
     return;
   }
   const button = event.target.closest('[data-action]');

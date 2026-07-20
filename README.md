@@ -54,7 +54,7 @@ workspace packages in the deployed checkout, so do not set a subdirectory as
 the service root.
 
 - Runtime: Node.js 24
-- Build command: `corepack enable && corepack prepare pnpm@11.7.0 --activate && pnpm install --frozen-lockfile && pnpm build`
+- Build command: `pnpm install --frozen-lockfile && pnpm build`
 - Start command: `node apps/console/dist/server.js`
 - Health check path: `/healthz`
 - Environment: `HOST=0.0.0.0`; Render supplies `PORT`; add `OPENAI_API_KEY` only as a secret server-side value

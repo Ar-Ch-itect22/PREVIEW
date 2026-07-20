@@ -236,3 +236,4 @@ This log records actual collaboration only. It is not a substitute for Git histo
 
 - Focused console verification passed: strict typecheck and 9 tests across 3 files, including client/global limit exhaustion and reset, invalid configuration rejection, local/Render binding, and a real HTTP `/healthz` response.
 - A clean temporary workspace excluded `.env`, `.git`, `.preview`, and `node_modules`, installed the frozen lockfile with supply-chain controls unchanged, then passed repository ESLint, 17 production builds, all strict package typechecks, and 96 tests across 22 files.
+- The first Render build proved Node 24.14.1 and the correct private `main` commit were selected, then failed before dependency installation because `corepack enable` attempted to replace Render's read-only `/usr/bin/pnpm`. The documented build command was narrowed to Render's already-provisioned `pnpm install --frozen-lockfile && pnpm build`; no application code or safety control changed.

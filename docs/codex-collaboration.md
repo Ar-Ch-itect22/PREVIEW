@@ -237,3 +237,15 @@ This log records actual collaboration only. It is not a substitute for Git histo
 - Focused console verification passed: strict typecheck and 9 tests across 3 files, including client/global limit exhaustion and reset, invalid configuration rejection, local/Render binding, and a real HTTP `/healthz` response.
 - A clean temporary workspace excluded `.env`, `.git`, `.preview`, and `node_modules`, installed the frozen lockfile with supply-chain controls unchanged, then passed repository ESLint, 17 production builds, all strict package typechecks, and 96 tests across 22 files.
 - The first Render build proved Node 24.14.1 and the correct private `main` commit were selected, then failed before dependency installation because `corepack enable` attempted to replace Render's read-only `/usr/bin/pnpm`. The documented build command was narrowed to Render's already-provisioned `pnpm install --frozen-lockfile && pnpm build`; no application code or safety control changed.
+
+## 2026-07-21 - Public Render verification and revision-aware presentation correction
+
+- Render successfully built and started the repo-root workspace at `https://preview-transaction-runtime.onrender.com`. The public `/healthz` endpoint returned `ok`, the root application returned HTTP 200, and Aru verified the full interface from an incognito browser without authentication.
+- Incognito Judge Mode evidence covered six-effect staging with zero provider writes, structured replay to three effects with zero writes, Revision 2 content-bound approval, a 3/3 independently verified receipt with zero residuals and zero unresolved outcomes, direct Revision 1 approval and a 6/6 independently verified receipt, and abort with zero provider writes.
+- The direct Revision 1 screenshots exposed a presentation-state defect: the server view inferred the Acme replay constraint from `APPROVED` or `COMMITTED` phase alone, so a correct six-effect Revision 1 approval could display Revision 2 replay copy. The underlying approved digest, effect count, durable execution, and receipt were correct.
+- Codex changed the view to derive replay presentation from the revision's actual `DENY_MUTATION` constraint and made the approval eyebrow use the active revision number. A regression test now directly approves and commits Revision 1 and proves six verified effects with no replay constraint; the existing Revision 2 replay path remains covered.
+
+### Verified results after the correction
+
+- Focused console verification passed 10 tests across 3 files.
+- Full `pnpm check` passed: ESLint with zero warnings, all 17 production builds, strict package typechecks, and 91 tests. `.env` remained ignored and no credential value was read or added to the diff.

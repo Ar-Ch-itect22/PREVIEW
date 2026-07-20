@@ -207,6 +207,10 @@ export class JudgeSession {
   public view(): Promise<JudgeSessionView> {
     const revision = this.#simulation?.revision ?? null;
     const effects = revision?.effectGraph?.effects ?? [];
+    const protectsAcme = revision?.structuredConstraints.some((constraint) => (
+      constraint.kind === 'DENY_MUTATION'
+      && constraint.resourceKey === 'reference-calendar:event:acme-renewal'
+    )) ?? false;
     return Promise.resolve(Object.freeze({
       approval: this.#approval,
       effectCount: effects.length,
@@ -218,7 +222,7 @@ export class JudgeSession {
       phase: this.#phase,
       providerState: this.#providerState(),
       receipt: this.#receipt,
-      replayConstraint: this.#phase === 'REPLAYED' || this.#phase === 'APPROVED' || this.#phase === 'COMMITTED'
+      replayConstraint: protectsAcme
         ? 'Protect Acme renewal — do not move this Calendar event'
         : null,
       revisionId: revision?.id ?? null,

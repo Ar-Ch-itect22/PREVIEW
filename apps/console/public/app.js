@@ -200,6 +200,9 @@ function renderShellActions() {
 
 function renderRail() {
   const copy = phaseCopy[state.phase];
+  const eyebrow = state.phase === 'APPROVED' && state.revisionNumber !== null
+    ? `Revision ${String(state.revisionNumber).padStart(2, '0')} / approval bound`
+    : copy.eyebrow;
   const safe = state.providerState.totalMutations === 0;
   const commitMotion = state.phase === 'COMMITTED' && motionAction === 'commit-in';
   const providerWrites = commitMotion
@@ -216,7 +219,7 @@ function renderRail() {
       <span class="judge-chip">Guided Judge Mode</span>
     </header>
     <section class="rail-story">
-      <p class="rail-eyebrow">${copy.eyebrow}</p>
+      <p class="rail-eyebrow">${eyebrow}</p>
       <h1>${copy.title}</h1>
       <p class="rail-copy">${copy.body}</p>
     </section>

@@ -80,6 +80,29 @@ describe('Gate 8 Judge Mode', () => {
     expect(committed.journal.length).toBeGreaterThan(10);
   });
 
+  it('keeps direct Revision 1 approval distinct from a structured replay', async () => {
+    const session = createSession();
+    const staged = await session.stage();
+    const approved = await session.approve();
+    const committed = await session.commit();
+
+    expect(staged.replayConstraint).toBeNull();
+    expect(approved).toMatchObject({
+      effectCount: 6,
+      phase: 'APPROVED',
+      replayConstraint: null,
+      revisionNumber: 1,
+    });
+    expect(committed).toMatchObject({
+      effectCount: 6,
+      phase: 'COMMITTED',
+      replayConstraint: null,
+      revisionNumber: 1,
+    });
+    expect(committed.receipt?.effects).toHaveLength(6);
+    expect(committed.receipt?.effects.every(({ status }) => status === 'committed_verified')).toBe(true);
+  });
+
   it('fails closed when commit is requested without approval', async () => {
     const session = createSession();
     await session.stage();

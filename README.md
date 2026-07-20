@@ -33,6 +33,23 @@ key, OAuth credential, Docker service, or external provider.
 The public no-login deployment is available at
 `https://preview-transaction-runtime.onrender.com`.
 
+## Judge path
+
+1. Open the public deployment; no login or credential is required.
+2. Run the deterministic shadow simulation. Six exact Calendar, Mail, and CRM
+   effects appear while the provider-write counter remains zero.
+3. Protect the Acme renewal. PREVIEW creates Revision 2 from clean shadow state,
+   invalidates the prior approval path, and removes the complete three-effect
+   Acme branch.
+4. Bind approval to Revision 2, then commit. The worker revalidates before its
+   first mutation and returns a 3/3 verified synthetic receipt.
+5. Optionally open `Try Live GPT-5.6`. This separate rate-limited proof gives
+   the model four strict read/stage tools, seals the resulting Calendar-to-Mail
+   graph, and exposes no approval or commit capability.
+
+The sample uses fictional Acme and Globex records and reserved `.test` email
+addresses. Guided Judge Mode is isolated per server session and resettable.
+
 Copy `.env.example` to `.env` only when a later gate needs local configuration. Gate 0 tests require no services, Docker, credentials, or network after installation.
 
 ## Architecture boundaries
@@ -49,6 +66,53 @@ Copy `.env.example` to `.env` only when a later gate needs local configuration. 
 - `apps/customer-ops-demo`: customer-operations proof only; never kernel semantics
 
 See [the transaction contract](docs/transaction-contract.md) and [architecture](docs/architecture.md).
+
+## GPT-5.6 and Codex
+
+The Live Sandbox uses the official OpenAI JavaScript SDK and Responses API with
+the `gpt-5.6` model alias. GPT chooses among four strict Calendar/Mail read and
+stage tools. PREVIEW-owned deterministic code validates every call, owns effect
+semantics and risk, seals the graph, and proves both synthetic providers remain
+unchanged. Approval, commit, verification, reconciliation, and compensation are
+not model tools.
+
+The majority of the kernel, adapters, recovery tests, product UX, debugging,
+deployment preparation, and evidence work was completed in the primary Build
+Week Codex task. See [Codex collaboration evidence](docs/codex-collaboration.md)
+and the [judging map](docs/judging-map.md).
+
+## Verification
+
+`pnpm check` builds every production package before running zero-warning ESLint,
+strict package typechecks, and the complete 91-test suite. The suite includes
+adapter conformance, tamper/drift checks, process-death and fault-injection
+matrices, reconciliation, compensation, and receipt assertions. Final
+submission verification also includes a clean frozen install, browser-level
+Playwright exercise of the hosted path, ten consecutive guided runs, tracked
+secret scanning, and dependency-license inspection.
+
+## Supported and certified surfaces
+
+- Development/runtime: Node.js 24 and pnpm 11; verified on Windows 11 locally
+  and Render's Linux Node runtime.
+- No-login product proof: synthetic Reference Calendar, Mail, and CRM.
+- Credential-certified operations: one narrow Google Calendar event move,
+  exact Gmail draft creation, and exact Gmail sending path.
+- Reference and Google adapter behavior is deliberately operation-specific;
+  PREVIEW does not claim universal connector coverage.
+
+## Limitations
+
+- The public Guided Judge Mode uses isolated synthetic providers; it does not
+  mutate a judge's Google account.
+- The displayed Google `COMMITTED_VERIFIED` result is evidence from a separate
+  controlled credential-backed Gate 7 run, not an active public write path.
+- Public Live Sandbox quotas are in-memory and scoped to the single Render
+  instance; they are submission abuse/cost guards, not distributed rate limits.
+- The Render free instance can cold-start after inactivity.
+- PREVIEW does not promise global atomicity, universal undo, or exactly-once
+  delivery where a provider cannot guarantee it. Receipts instead report known
+  residual and unresolved state explicitly.
 
 ## Render deployment
 

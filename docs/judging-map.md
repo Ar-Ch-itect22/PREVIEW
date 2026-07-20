@@ -1,6 +1,6 @@
 # Judging Map
 
-| Claim | Planned evidence |
+| Claim | Verified evidence |
 | --- | --- |
 | Unknown mutations fail closed | Domain invariant test |
 | Illegal transaction transitions fail | Exhaustive/property state-machine tests |
@@ -16,5 +16,15 @@
 | Replay changes the exact graph | Gate 4 digest and causal-removal tests |
 | Approved content cannot drift or be tampered | Gate 5 approval tests |
 | Recovery reports residual state honestly | Gate 6 fault-injection receipts |
+| Process death never blindly duplicates an irreversible action | Gate 6 happy/failure crash matrices |
+| Real Calendar and Gmail operations use the same durable saga | Gate 7 mocked integration suite and credential-backed certification receipt |
+| Real Google execution was content-bound and fully verified | `COMMITTED_VERIFIED`: Calendar move, Gmail draft, Gmail send; one attempt each; zero residuals/unresolved |
+| GPT cannot approve, commit, or mutate a provider | Four-tool strict Responses API registry and Live Sandbox controller tests |
+| A real GPT-5.6 session creates the dependent graph without writes | Public Live Sandbox: 4 strict calls, 2 sealed Calendar-to-Mail effects, 0 provider writes |
+| A judge can inspect and commit without credentials | Public incognito Guided Judge Mode and browser-level Playwright verification |
+| Direct Revision 1 approval remains distinct from replay | Console regression test and 6/6 verified public receipt |
+| Repeated demo behavior is stable | 10/10 consecutive guided submission-audit runs |
+| Repository is reproducible and safe to inspect | Fresh-clone frozen install, 17 builds, 91 tests, secret scan, and permissive-license audit |
 
-Only the first three rows are in Gate 0 scope.
+The public Guided Judge Mode uses synthetic providers. Real Google certification
+is separate evidence and is never represented as an active public write path.

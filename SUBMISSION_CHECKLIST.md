@@ -8,11 +8,12 @@
 - [x] Hero replay verified repeatedly
 - [x] Approval, drift, tamper, and recovery verified
 - [x] Real certified adapter paths verified
-- [ ] Judge Mode works in incognito without credentials
-- [ ] Full test, build, conformance, fault-injection, Playwright, secret, and license checks pass
-- [ ] Fresh-clone setup passes
-- [ ] README, limitations, GPT-5.6 use, and Codex evidence are current
+- [x] Judge Mode works in incognito without credentials
+- [x] Full test, build, conformance, fault-injection, browser-level Playwright, secret, and license checks pass
+- [x] Fresh-clone setup passes
+- [x] README, limitations, GPT-5.6 use, and Codex evidence are current
 - [ ] Public video is under three minutes and works with audio in incognito
-- [ ] Repository access and hosted demo are verified
-- [ ] `/feedback` Session ID from the primary implementation task is preserved
+- [x] Hosted no-login demo and `/healthz` are verified publicly
+- [ ] Private repository access is shared with the required judge accounts and verified
+- [x] `/feedback` Session ID from the primary implementation task is preserved by Aru
 - [ ] Devpost submission is reopened and checked before cutoff

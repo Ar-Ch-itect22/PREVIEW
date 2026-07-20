@@ -224,3 +224,15 @@ This log records actual collaboration only. It is not a substitute for Git histo
 - Codex promoted only the top-bar Live Sandbox trigger into a compact `Try Live GPT-5.6` status pill and left the existing Guided Judge Mode surfaces unchanged.
 - A successful live run now offers `Open in PREVIEW`, which carries the exact sealed Calendar and Mail graph into a dedicated read-only consequence review. The view shows the GPT-5.6 tool trace, graph binding, external recipient, risk classes, and zero provider writes; approval and commit remain unavailable to the model-facing path.
 - ESLint, the console production build, strict console typecheck, and all 6 focused console tests passed. A browser verification completed a real GPT-5.6 run with 4 strict tool calls, 2 sealed effects, and 0 provider writes, then returned cleanly to the untouched Guided Judge Mode.
+
+## 2026-07-21 - Render deployment boundary and public Live Sandbox guard
+
+- Codex resumed from the clean pushed `bffd03e` baseline in the primary Build Week task and changed no locked UI typography, spacing, layout, or styling.
+- The console retains `127.0.0.1:4173` as its local default while accepting a strictly validated `HOST=0.0.0.0` and Render-supplied `PORT` for deployment. A credential-free `GET /healthz` path reports service health without invoking GPT.
+- The public cost-bearing Live Sandbox now has a fixed eight-turn ceiling, one global in-flight run, a sliding three-runs-per-client hourly default, and a 24-runs-per-instance hourly hard cap. Exhaustion returns HTTP 429 with `Retry-After`; Guided Judge Mode remains available because its deterministic routes are outside the guard.
+- `OPENAI_API_KEY` remains server-side. The deployment documentation uses placeholders only, and neither `.env` nor a credential was read or copied into the deployment changes.
+
+### Verified results
+
+- Focused console verification passed: strict typecheck and 9 tests across 3 files, including client/global limit exhaustion and reset, invalid configuration rejection, local/Render binding, and a real HTTP `/healthz` response.
+- A clean temporary workspace excluded `.env`, `.git`, `.preview`, and `node_modules`, installed the frozen lockfile with supply-chain controls unchanged, then passed repository ESLint, 17 production builds, all strict package typechecks, and 96 tests across 22 files.

@@ -31,6 +31,8 @@ const SANDBOX_EVENT: CalendarEvent = Object.freeze({
 
 export const LIVE_SANDBOX_SAMPLE_INTENT = 'Move event-1 to Jul 27, 10:00 AM–10:30 AM UTC and stage an attendee message as message-1 to attendee@example.test.';
 
+const LIVE_SANDBOX_MAX_TURNS = 8;
+
 export interface LiveSandboxEffectView {
   readonly after: Readonly<Record<string, unknown>>;
   readonly before: Readonly<Record<string, unknown>> | null;
@@ -83,10 +85,7 @@ export class LiveSandboxRunner {
   }
 
   public async run(rawIntent: string): Promise<LiveSandboxRunView> {
-    const instruction = rawIntent.trim();
-    if (instruction.length < 12 || instruction.length > 1_200) {
-      throw new LiveSandboxUnavailableError('Instruction must be between 12 and 1,200 characters');
-    }
+    const instruction = validateLiveSandboxIntent(rawIntent);
     const calendarProvider = new InMemoryReferenceCalendarProvider([SANDBOX_EVENT]);
     const mailProvider = new InMemoryReferenceMailProvider([]);
     const calendarBefore = calendarProvider.snapshotBytes();
@@ -97,7 +96,11 @@ export class LiveSandboxRunner {
       mail: new ReferenceMailSimulationAdapter(mailProvider.createReadPort()),
       session: new ShadowRevisionSession(createDraft(token)),
     });
-    const result = await new PreviewResponsesToolLoop(this.#clientFactory(), controller).run(instruction);
+    const result = await new PreviewResponsesToolLoop(
+      this.#clientFactory(),
+      controller,
+      { maxTurns: LIVE_SANDBOX_MAX_TURNS },
+    ).run(instruction);
     const unchanged = calendarProvider.snapshotBytes().equals(calendarBefore)
       && mailProvider.snapshotBytes().equals(mailBefore)
       && calendarProvider.mutationCount === 0
@@ -119,6 +122,14 @@ export class LiveSandboxRunner {
       toolTrace: Object.freeze(result.toolTrace.map((entry) => Object.freeze({ ...entry }))),
     });
   }
+}
+
+export function validateLiveSandboxIntent(rawIntent: string): string {
+  const instruction = rawIntent.trim();
+  if (instruction.length < 12 || instruction.length > 1_200) {
+    throw new LiveSandboxUnavailableError('Instruction must be between 12 and 1,200 characters');
+  }
+  return instruction;
 }
 
 function defaultClientFactory(): PreviewResponsesClient {

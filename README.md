@@ -46,3 +46,22 @@ Copy `.env.example` to `.env` only when a later gate needs local configuration. 
 - `apps/customer-ops-demo`: customer-operations proof only; never kernel semantics
 
 See [the transaction contract](docs/transaction-contract.md) and [architecture](docs/architecture.md).
+
+## Render deployment
+
+Create a public Render Web Service from the repository root. PREVIEW keeps its
+workspace packages in the deployed checkout, so do not set a subdirectory as
+the service root.
+
+- Runtime: Node.js 24
+- Build command: `corepack enable && corepack prepare pnpm@11.7.0 --activate && pnpm install --frozen-lockfile && pnpm build`
+- Start command: `node apps/console/dist/server.js`
+- Health check path: `/healthz`
+- Environment: `HOST=0.0.0.0`; Render supplies `PORT`; add `OPENAI_API_KEY` only as a secret server-side value
+
+The deterministic Guided Judge Mode remains available without an API key. The
+public Live Sandbox keeps the key server-side, exposes stage-only tools, caps
+the model loop at eight turns, permits one concurrent run, and defaults to
+three runs per client and 24 total runs per service instance each hour. The two
+hourly limits can be lowered with `PREVIEW_LIVE_SANDBOX_CLIENT_LIMIT` and
+`PREVIEW_LIVE_SANDBOX_GLOBAL_LIMIT`.

@@ -29,3 +29,14 @@ Open `http://127.0.0.1:4173` and follow the five visible steps:
 The page labels the orchestration as deterministic Judge Mode. It does not
 pretend the credential-free demo is a live GPT call; Gate 3 separately verifies
 the GPT-5.6 Responses API tool loop.
+
+## Hosted judge path
+
+The Render deployment serves the same no-login Guided Judge Mode publicly and
+adds the visibly separate server-side GPT-5.6 Live Sandbox. `/healthz` is the
+deployment health path. The Live Sandbox never receives approval or commit
+tools and is bounded to eight model turns, one concurrent run, three runs per
+client per hour, and 24 runs per service instance per hour by default. Rate
+limits affect only the cost-bearing Live Sandbox; the deterministic Guided
+Judge Mode remains usable when the live limit is exhausted or OpenAI is
+unavailable.

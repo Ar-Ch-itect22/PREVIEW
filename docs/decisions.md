@@ -229,6 +229,13 @@ Decisions are recorded when made and are never backdated.
 
 - Decision: keep Guided Judge Mode deterministic over isolated synthetic providers, and expose GPT-5.6 through a separate Live Sandbox surface using the existing strict Calendar/Mail stage-only tool loop.
 - Reason: the guided flow remains safe and repeatable for judging, while the product now demonstrates a real model call without implying that GPT can approve, commit, or mutate a provider.
+
+## 2026-07-21 — Bound public Live Sandbox cost independently of Judge Mode
+
+- Status: accepted
+- Context: the deployed no-login URL keeps `OPENAI_API_KEY` server-side, but concurrency control alone does not prevent sequential public requests from consuming the project budget.
+- Decision: retain one global in-flight run, cap the fixed demo loop at eight turns, and add an in-memory sliding hourly guard with defaults of three runs per forwarded client address and 24 runs per service instance. Reject exhausted live requests with HTTP 429 and `Retry-After`, while leaving every deterministic Guided Judge Mode route available. Limits are positive-integer environment configuration and invalid values fail during startup.
+- Consequence: ordinary judges can run the live proof without login, a spoofed client identity cannot bypass the instance-wide ceiling, and an OpenAI outage or exhausted live budget does not block the credential-free product demonstration. The guard is intentionally scoped to the single-instance submission deployment rather than claimed as distributed quota infrastructure.
 - Consequence: the Live Sandbox API keeps `OPENAI_API_KEY` server-side, rejects concurrent runs, caps instruction size, verifies provider snapshots remain unchanged, and returns only the sealed effect graph and tool trace. No commit endpoint is connected to the model-facing controller.
 
 ## 2026-07-19 — Present customer risk as facts, not model judgment

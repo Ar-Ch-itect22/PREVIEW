@@ -9,7 +9,12 @@ import {
   LIVE_SANDBOX_SAMPLE_INTENT,
   LiveSandboxRunner,
   LiveSandboxUnavailableError,
+  validateLiveSandboxIntent,
 } from './live-sandbox.js';
+import {
+  LiveSandboxRateGuard,
+  loadLiveSandboxRateLimitConfig,
+} from './live-sandbox-rate-guard.js';
 
 const PUBLIC_DIRECTORY = fileURLToPath(new URL('../public/', import.meta.url));
 const CONTENT_TYPES: Readonly<Record<string, string>> = Object.freeze({
@@ -21,6 +26,7 @@ const CONTENT_TYPES: Readonly<Record<string, string>> = Object.freeze({
 export function createJudgeServer() {
   let session = new JudgeSession();
   const liveSandbox = new LiveSandboxRunner();
+  const liveRateGuard = new LiveSandboxRateGuard(loadLiveSandboxRateLimitConfig());
   let liveRunInFlight = false;
   return createServer((request, response) => {
     void (async () => {
@@ -34,6 +40,10 @@ export function createJudgeServer() {
               providerMode: 'ISOLATED_SYNTHETIC',
               sampleIntent: LIVE_SANDBOX_SAMPLE_INTENT,
               toolAuthority: 'STAGE_ONLY',
+              usageLimit: {
+                clientRunsPerHour: liveRateGuard.config.clientLimit,
+                globalRunsPerHour: liveRateGuard.config.globalLimit,
+              },
             });
             return;
           }
@@ -52,6 +62,17 @@ export function createJudgeServer() {
             }
             const body = await readJsonBody(request);
             const intent = typeof body.intent === 'string' ? body.intent : '';
+            validateLiveSandboxIntent(intent);
+            const rateLimit = liveRateGuard.tryAcquire(clientIdentifier(request));
+            if (!rateLimit.allowed) {
+              writeJson(
+                response,
+                429,
+                { error: 'Live Sandbox hourly limit reached; Guided Judge Mode remains available' },
+                { 'Retry-After': String(rateLimit.retryAfterSeconds) },
+              );
+              return;
+            }
             liveRunInFlight = true;
             try {
               writeJson(response, 200, await liveSandbox.run(intent));
@@ -84,6 +105,10 @@ export function createJudgeServer() {
               writeJson(response, 404, { error: 'Unknown Judge Mode action' });
               return;
           }
+        }
+        if (request.method === 'GET' && url.pathname === '/healthz') {
+          writeJson(response, 200, { status: 'ok' });
+          return;
         }
         await serveAsset(url.pathname, request, response);
       } catch (error) {
@@ -154,19 +179,63 @@ async function serveAsset(
   createReadStream(path).pipe(response);
 }
 
-function writeJson(response: ServerResponse, status: number, value: unknown): void {
+function writeJson(
+  response: ServerResponse,
+  status: number,
+  value: unknown,
+  headers: Readonly<Record<string, string>> = {},
+): void {
   response.writeHead(status, {
     'Cache-Control': 'no-store',
     'Content-Type': 'application/json; charset=utf-8',
+    ...headers,
   });
   response.end(JSON.stringify(value));
+}
+
+function clientIdentifier(request: IncomingMessage): string {
+  const forwarded = request.headers['x-forwarded-for'];
+  const value = Array.isArray(forwarded) ? forwarded[0] : forwarded;
+  const firstForwarded = value?.split(',')[0]?.trim();
+  if (firstForwarded !== undefined && firstForwarded.length > 0) {
+    return firstForwarded.slice(0, 128);
+  }
+  return request.socket.remoteAddress ?? 'unknown-client';
+}
+
+export interface JudgeServerBinding {
+  readonly host: '0.0.0.0' | '127.0.0.1' | 'localhost';
+  readonly port: number;
+}
+
+export function loadJudgeServerBinding(
+  environment: NodeJS.ProcessEnv = process.env,
+): JudgeServerBinding {
+  const configuredHost = environment.HOST?.trim();
+  const hostValue = configuredHost === undefined || configuredHost.length === 0
+    ? '127.0.0.1'
+    : configuredHost;
+  if (hostValue !== '0.0.0.0' && hostValue !== '127.0.0.1' && hostValue !== 'localhost') {
+    throw new TypeError('HOST must be 0.0.0.0, 127.0.0.1, or localhost');
+  }
+  const configuredPort = environment.PORT?.trim();
+  const portValue = configuredPort === undefined || configuredPort.length === 0
+    ? '4173'
+    : configuredPort;
+  if (!/^\d+$/u.test(portValue)) throw new TypeError('PORT must be an integer from 1 to 65535');
+  const port = Number(portValue);
+  if (!Number.isInteger(port) || port < 1 || port > 65_535) {
+    throw new TypeError('PORT must be an integer from 1 to 65535');
+  }
+  return Object.freeze({ host: hostValue, port });
 }
 
 const isMain = process.argv[1] !== undefined
   && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
 if (isMain) {
-  const port = Number.parseInt(process.env.PORT ?? '4173', 10);
-  createJudgeServer().listen(port, '127.0.0.1', () => {
-    process.stdout.write(`PREVIEW Judge Mode: http://127.0.0.1:${String(port)}\n`);
+  const binding = loadJudgeServerBinding();
+  createJudgeServer().listen(binding.port, binding.host, () => {
+    const displayHost = binding.host === '0.0.0.0' ? '127.0.0.1' : binding.host;
+    process.stdout.write(`PREVIEW Judge Mode: http://${displayHost}:${String(binding.port)}\n`);
   });
 }

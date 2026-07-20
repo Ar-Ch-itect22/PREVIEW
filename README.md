@@ -30,6 +30,9 @@ pnpm dev:judge
 Judge Mode is available locally at `http://127.0.0.1:4173` and requires no API
 key, OAuth credential, Docker service, or external provider.
 
+The public no-login deployment is available at
+`https://preview-transaction-runtime.onrender.com`.
+
 Copy `.env.example` to `.env` only when a later gate needs local configuration. Gate 0 tests require no services, Docker, credentials, or network after installation.
 
 ## Architecture boundaries

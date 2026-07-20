@@ -249,3 +249,9 @@ This log records actual collaboration only. It is not a substitute for Git histo
 
 - Focused console verification passed 10 tests across 3 files.
 - Full `pnpm check` passed: ESLint with zero warnings, all 17 production builds, strict package typechecks, and 91 tests. `.env` remained ignored and no credential value was read or added to the diff.
+
+## 2026-07-21 - Public GPT-5.6 Live Sandbox verification
+
+- After Render deployed the revision-aware correction, Aru hard-refreshed the public application in an incognito browser and confirmed direct Revision 1 approval displayed no replay claim, retained all six effects, and completed with a 6/6 independently verified receipt, zero residuals, and zero unresolved outcomes.
+- Aru then invoked the public Live Sandbox once with its supplied Calendar-to-Mail instruction. The server-side Responses API run used `gpt-5.6`, made four strict tool calls (`calendar_read_event`, `calendar_stage_move`, staged `calendar_read_event`, then `mail_stage_attendee_message`), and produced two deterministic sealed effects with zero provider writes.
+- `Open in PREVIEW` carried that exact sealed graph into the full consequence-review surface. The review reported byte-identical provider state, the Calendar-to-Mail dependency, the external recipient and risk classes, and visibly unavailable human approval and provider commit steps. No model-facing commit capability or provider mutation endpoint was exposed.

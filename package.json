@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "pnpm -r --if-present build",
-    "check": "pnpm lint && pnpm build && pnpm typecheck:packages && pnpm test:packages",
+    "check": "pnpm build && pnpm lint && pnpm typecheck:packages && pnpm test:packages",
     "lint": "eslint . --max-warnings 0",
     "test": "pnpm build && pnpm test:packages",
     "test:gate1": "pnpm build && pnpm --filter @preview/reference-calendar test",

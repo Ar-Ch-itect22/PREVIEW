@@ -16,8 +16,8 @@ instead of waiting on model latency during the final take.
 | 1:48-2:02 | Bind approval, then commit | "Approval binds this exact graph, snapshot, adapter set, policy, and order. Only the human control plane can commit." |
 | 2:02-2:19 | Show durable receipt | "The worker revalidates before mutation, executes in safe dependency order, verifies every effect, and returns a 3-of-3 receipt with zero residuals and zero unresolved outcomes." |
 | 2:19-2:38 | Cut to successful Live Sandbox result, then Open in PREVIEW | "This separate live proof uses GPT-5.6 through the Responses API. Four strict read-and-stage calls create a sealed Calendar-to-Mail graph with zero provider writes. GPT never receives approval or commit tools." |
-| 2:38-2:49 | Show `What's running?` evidence panel | "The same architecture was separately certified against Google Calendar and Gmail through a content-bound durable saga." |
-| 2:49-2:56 | Return to verified receipt/logo | "PREVIEW lets agents stage, inspect, replay, commit, verify, and recover what is recoverable." |
+| 2:38-2:51 | Show `What's running?` evidence panel | "Codex helped me implement and stress-test the kernel, adapters, failure recovery, and deployment. This architecture was also certified against real Google Calendar and Gmail." |
+| 2:51-2:57 | Return to verified receipt/logo | "PREVIEW lets agents stage, inspect, replay, commit, verify, and recover what is recoverable." |
 
 ## Recording checks
 

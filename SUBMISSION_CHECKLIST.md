@@ -12,6 +12,8 @@
 - [x] Full test, build, conformance, fault-injection, browser-level Playwright, secret, and license checks pass
 - [x] Fresh-clone setup passes
 - [x] README, limitations, GPT-5.6 use, and Codex evidence are current
+- [x] Add a compact README section covering the real Google adapter certification and OAuth boundary
+- [x] Add a compact README section selling PREVIEW's company-scale path from demo to horizontal agent transaction infrastructure (keep Proxy out of the Build Week positioning)
 - [ ] Public video is under three minutes and works with audio in incognito
 - [x] Hosted no-login demo and `/healthz` are verified publicly
 - [ ] Private repository access is shared with the required judge accounts and verified

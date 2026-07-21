@@ -17,6 +17,23 @@ surfaces a high-value Acme consequence, replays a structured protection that
 removes the complete causal group, binds approval to the new immutable graph,
 then commits and renders the verified receipt.
 
+## From demo to platform
+
+Customer operations is the reference package, not the product boundary. The
+larger opportunity is a horizontal transaction layer between autonomous agents
+and consequential tools: agents propose work, while PREVIEW owns the boundary
+where that work is staged, inspected, approved, committed, and verified.
+
+The platform path is an SDK or MCP-compatible gateway that agent frameworks can
+route write-capable tools through, backed by an ecosystem of operation-specific
+certified adapters. Those adapters can extend the same contract to
+communications, files, finance, infrastructure, and business systems without
+moving provider semantics into the model. Above the runtime, teams could add
+risk policies, approval routing, reusable constraints, replay environments, and
+durable receipts for governance and incident recovery. The current three-system
+proof is deliberately narrow; the architecture is designed for this broader
+transaction boundary without claiming that connector surface today.
+
 ## Local setup
 
 Requirements: Node.js 24 and pnpm 11.
@@ -57,12 +74,18 @@ Copy `.env.example` to `.env` only when a later gate needs local configuration. 
 - `packages/domain`: provider-neutral schemas, immutable effect IR, and state machines
 - `packages/runtime`: provider-neutral observed state, overlay, and atomic staging
 - `packages/adapter-sdk`: separate simulation and commit capability contracts
+- `packages/adapter-testkit`: reusable adapter conformance assertions
 - `packages/approval`: deterministic graph canonicalization and content-bound approvals
+- `packages/persistence`: immutable seeds, invalidations, journals, leases, and receipts
 - `packages/adapters/reference-calendar`: synthetic certified move-event proof
 - `packages/adapters/reference-mail`: simulation-only irreversible send-message staging proof
+- `packages/adapters/google-common`: shared OAuth token exchange and HTTP transport
+- `packages/adapters/google-calendar`: certified timed-event move adapter
+- `packages/adapters/gmail`: certified exact draft and send adapters
 - `apps/gateway`: reserved agent and human control-plane boundary
 - `apps/worker`: approval-bound durable saga execution, reconciliation, verification, compensation, and receipts
 - `apps/console`: credential-free product review, replay, approval, receipt, and Judge Mode
+- `apps/google-workspace-certification`: two-phase credential-backed certification harness
 - `apps/customer-ops-demo`: customer-operations proof only; never kernel semantics
 
 See [the transaction contract](docs/transaction-contract.md) and [architecture](docs/architecture.md).
@@ -100,6 +123,37 @@ secret scanning, and dependency-license inspection.
   exact Gmail draft creation, and exact Gmail sending path.
 - Reference and Google adapter behavior is deliberately operation-specific;
   PREVIEW does not claim universal connector coverage.
+
+## Real Google certification and OAuth boundary
+
+The repository contains real, capability-separated Google adapters rather than
+only UI mocks. `google-common` exchanges a refresh token and supplies the shared
+authenticated transport. The Calendar adapter certifies one timed,
+non-recurring event move without attendee notifications, uses provider etags to
+block drift, and reconciles through PREVIEW-owned private extended properties.
+The Gmail adapter certifies exact plain-text draft creation and exact sending,
+binds controlled MIME bytes into the approved effect, reconciles by Message-ID,
+allows compensation only for drafts, and treats delivery as irreversible.
+
+Live certification is intentionally two phase. The prepare command performs
+reads and stages an immutable Calendar-to-Gmail graph with zero provider writes.
+Only after a human reviews that graph and supplies its exact digest can the
+execute command cross the mutation boundary, revalidate state, commit in
+dependency order, and verify a durable receipt. Certification uses a dedicated
+synthetic account with the Calendar owned-events scope plus `gmail.compose` and
+`gmail.readonly`. OAuth credentials, the approval-signing key, and fixture IDs
+remain in the ignored local `.env`; they are not required for the public demo or
+normal Judge Mode.
+
+```sh
+pnpm test:gate7
+pnpm test:gate7:live:prepare
+pnpm test:gate7:live:execute
+```
+
+The two live commands are evidence procedures for an explicitly configured test
+account, not general judge setup instructions. See the scoped adapter READMEs and
+the certification record in [Codex collaboration evidence](docs/codex-collaboration.md).
 
 ## Limitations
 

@@ -49,6 +49,8 @@ key, OAuth credential, Docker service, or external provider.
 
 The public no-login deployment is available at
 `https://preview-transaction-runtime.onrender.com`.
+Because it runs on a Render free instance, the first visit after inactivity may
+take 30–60 seconds while the service wakes; subsequent navigation is immediate.
 
 ## Judge path
 

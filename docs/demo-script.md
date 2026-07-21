@@ -11,7 +11,7 @@ instead of waiting on model latency during the final take.
 | 0:27-0:38 | Run shadow simulation | "This customer-operations pack is only the proof. The runtime beneath it is provider-neutral." |
 | 0:38-1:02 | Show six-effect graph and Acme warning | "One instruction becomes six exact Calendar, Mail, and CRM effects. The Acme meeting moves past its renewal deadline and would notify an external recipient, while provider writes remain zero." |
 | 1:02-1:17 | Scroll the deterministic diff | "Risk, payloads, recipients, dependencies, and before-and-after values come from deterministic adapter semantics, not model prose." |
-| 1:17-1:34 | Click Protect Acme and replay | "I protect Acme. That structured constraint creates a clean second revision, invalidates the old approval path, and removes the entire Calendar-to-Mail-to-CRM branch." |
+| 1:17-1:34 | Click Keep Acme unchanged and replay | "I protect Acme. That structured constraint creates a clean second revision, invalidates the old approval path, and removes the entire Calendar-to-Mail-to-CRM branch." |
 | 1:34-1:48 | Show Revision 2 and changed digest | "The graph changes from six effects to three. Reality is still untouched." |
 | 1:48-2:02 | Bind approval, then commit | "Approval binds this exact graph, snapshot, adapter set, policy, and order. Only the human control plane can commit." |
 | 2:02-2:19 | Show durable receipt | "The worker revalidates before mutation, executes in safe dependency order, verifies every effect, and returns a 3-of-3 receipt with zero residuals and zero unresolved outcomes." |

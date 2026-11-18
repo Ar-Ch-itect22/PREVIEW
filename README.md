@@ -1,6 +1,6 @@
 # PREVIEW
 
-**Live demo:** [Try PREVIEW](https://preview-transaction-runtime.onrender.com) | **Video + writeup:** [Devpost](https://devpost.com/software/preview-3e1fgr)
+**Live demo:** [Try PREVIEW](https://preview-transaction-runtime.onrender.com) | **Video:** [YouTube](https://youtu.be/4t2uwiNZsTw) | **Writeup:** [Devpost](https://devpost.com/software/preview-3e1fgr)
 
 PREVIEW is a horizontal transactional runtime for tool-using agents. It lets an agent stage work against shadow state, inspect the exact cross-system consequences, replay corrections, approve an immutable effect graph, and then commit and verify that graph.
 
